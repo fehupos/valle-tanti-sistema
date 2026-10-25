@@ -1,0 +1,32 @@
+
+:root {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  background: #FBF9F5;
+  color: #0E1C30;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}

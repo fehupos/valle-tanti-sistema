@@ -1,0 +1,27 @@
+.sale-overlay{position:fixed;inset:0;z-index:9999;background:rgba(14,28,48,.65);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.sale-dialog{width:min(100%,620px);max-height:calc(100vh - 40px);overflow-y:auto;background:#fff;border-radius:18px;box-shadow:0 20px 70px #0e1c3040;color:#0e1c30}
+.sale-header{display:flex;justify-content:space-between;align-items:flex-start;padding:24px 28px 18px;border-bottom:1px solid #ebe4d8}
+.sale-header h2{font-size:22px;margin:0 0 6px}.sale-header p{font-size:13px;color:#4a6282;margin:0}
+.sale-close{background:transparent;border:0;font-size:30px;line-height:1;color:#4a6282;cursor:pointer}
+.sale-form{display:flex;flex-direction:column;gap:15px;padding:22px 28px 26px}
+.sale-form h3{font-size:15px;margin:3px 0 0;color:#0e1c30}
+.sale-form label{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:600;color:#0e1c30}
+.sale-form input:not([type=checkbox]),.sale-form select,.sale-form textarea{width:100%;min-width:0;padding:11px;border:1px solid #d5c7b3;border-radius:8px;background:white;color:#0e1c30;font:inherit;font-weight:400}
+.sale-form .sale-switch{flex-direction:row;align-items:center;font-weight:500;gap:8px}
+.sale-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sale-wide{grid-column:1/-1}
+.sale-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.sale-actions button{padding:12px 18px;border-radius:9px;font-weight:600;cursor:pointer}
+.sale-cancel{background:white;color:#0e1c30;border:1px solid #d5c7b3}
+.sale-submit{background:#0e1c30;color:white;border:1px solid #0e1c30}
+.sale-actions button:disabled{opacity:.6;cursor:wait}.sale-error{background:#fff1f1;color:#a22020;border-radius:8px;padding:12px;font-size:13px;margin:0}
+@media(max-width:540px){.sale-grid{grid-template-columns:1fr}.sale-wide{grid-column:auto}.sale-header{padding:20px}.sale-form{padding:20px}.sale-actions{flex-direction:column-reverse}.sale-actions button{width:100%}}
+
+/* Navegação entre as quatro etapas */
+.sale-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:14px 28px;border-bottom:1px solid #ebe4d8}
+.sale-step{padding:9px 5px;border:1px solid #ebe4d8;border-radius:8px;background:#fbf9f5;color:#4a6282;font:inherit;font-size:12px;cursor:pointer}
+.sale-step.active{background:#0e1c30;color:white;border-color:#0e1c30;font-weight:700}
+.sale-step:disabled{opacity:.6;cursor:wait}
+.sale-help{font-size:12px;color:#4a6282;line-height:1.5;margin:0}
+.sale-form input[readonly]{background:#f5f3ef;color:#4a6282}
+.sale-form input:focus-visible,.sale-form select:focus-visible,.sale-form textarea:focus-visible{outline:2px solid #4a6282;outline-offset:1px}
+@media(max-width:540px){.sale-steps{padding:12px;gap:4px}.sale-step{font-size:10px;padding:9px 2px}}
