@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import './App.css';
 import Login from './Login';
 import SaleModal from './SaleModal';
+import SalesPage from './SalesPage';
 
 const LOGO = 'https://lhinolmdpaonyuxbgzbw.supabase.co/storage/v1/object/public/puppy-photos/site/2.svg';
 const BUCKET = 'puppy-photos';
@@ -17,7 +18,10 @@ const priceText = (value) => value === null || value === undefined || value === 
 
 export default function App() {
   const [puppyToSell, setPuppyToSell] = useState(null);
+  const [activePage, setActivePage] = useState('puppies');
   const [authUser, setAuthUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const isManagement = userProfile?.role === 'gestao';
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [puppies,setPuppies] = useState([]);
   const [loading,setLoading] = useState(true);
@@ -46,22 +50,23 @@ useEffect(() => {
     if (!active) return;
 
     if (!authError && user) {
-      const { data: admin, error: adminError } = await supabase
-        .from('admin_users')
-        .select('user_id')
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id, full_name, role, active')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (!active) return;
-
-      if (!adminError && admin) {
+      if (!profileError && profile?.active && ['gestao', 'vendedor'].includes(profile.role)) {
+        setUserProfile(profile);
         setAuthUser(user);
       } else {
         await supabase.auth.signOut();
-        setAuthUser(null);
+        if (active) { setAuthUser(null); setUserProfile(null); }
       }
     } else {
       setAuthUser(null);
+      setUserProfile(null);
     }
 
     if (active) setCheckingAuth(false);
@@ -83,6 +88,8 @@ async function handleLogout() {
   }
 
   setAuthUser(null);
+  setUserProfile(null);
+  setActivePage('puppies');
 }
 
   async function loadPuppies() {
@@ -137,7 +144,9 @@ async function handleLogout() {
     });
   }
   async function save(event){
-    event.preventDefault();setSaving(true);setError('');setNotice('');
+    event.preventDefault();
+    if (!isManagement) { setError('Somente a Gestão pode cadastrar ou editar filhotes.'); return; }
+    setSaving(true);setError('');setNotice('');
     let uploadedPath='';
     try {
       const {data:{user},error:authError}=await supabase.auth.getUser();
@@ -164,19 +173,83 @@ async function handleLogout() {
   if (checkingAuth) {
     return (
       <div className="login-page">
-        <p>Verificando acesso administrativo...</p>
+        <p>Verificando acesso ao sistema...</p>
       </div>
     );
   }
 
   if (!authUser) {
-    return <Login onLogin={setAuthUser} />;
+    return <Login onLogin={async (user) => {
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id, full_name, role, active')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (profileError || !profile?.active || !['gestao', 'vendedor'].includes(profile.role)) {
+        await supabase.auth.signOut();
+        setAuthUser(null);
+        setUserProfile(null);
+        return;
+      }
+      setUserProfile(profile);
+      setAuthUser(user);
+    }} />;
   }
 
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="sidebar-brand"><img src={LOGO} alt="Valle Tanti Auguri"/><p>Sistema administrativo</p></div>
-      <nav><div className="nav-active">🐾 Filhotes</div><div className="nav-disabled">Vendas (em breve)</div><div className="nav-disabled">Clientes (em breve)</div><div className="nav-disabled">Relatórios (em breve)</div></nav>
+      <nav>
+      <button
+  type="button"
+  className={activePage === 'puppies' ? 'nav-active' : 'nav-disabled'}
+  onClick={() => setActivePage('puppies')}
+>
+  <svg
+    width="19"
+    height="19"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <ellipse cx="12" cy="17" rx="5" ry="3.5" />
+    <ellipse cx="5.5" cy="10" rx="1.5" ry="2" />
+    <ellipse cx="9.5" cy="6.5" rx="1.5" ry="2" />
+    <ellipse cx="14.5" cy="6.5" rx="1.5" ry="2" />
+    <ellipse cx="18.5" cy="10" rx="1.5" ry="2" />
+  </svg>
+  <span>Filhotes</span>
+</button>
+
+<button
+  type="button"
+  className={activePage === 'sales' ? 'nav-active' : 'nav-disabled'}
+  onClick={() => setActivePage('sales')}
+>
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 3h8l3 3v15H5V3h3Z" />
+            <path d="M8 10h8M8 14h8M8 18h5" />
+            <path d="M16 3v4h3" />
+          </svg>
+          <span>Vendas</span>
+        </button>
+        <div className="nav-disabled">Clientes (em breve)</div>
+        <div className="nav-disabled">Relatórios (em breve)</div>
+      </nav>
       <button
         type="button"
         className="logout-button"
@@ -185,8 +258,12 @@ async function handleLogout() {
         Sair do sistema
       </button>
     </aside>
-    <main className="content">
-      <header className="page-header"><div><h1>Filhotes</h1><p>Gerencie os filhotes cadastrados no canil.</p></div><button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button></header>
+    {activePage === 'sales' ? (
+      <main className="content">
+        <SalesPage />
+      </main>
+    ) : <main className="content">
+      <header className="page-header"><div><h1>Filhotes</h1><p>{isManagement ? 'Gerencie os filhotes cadastrados no canil.' : 'Consulte os filhotes e registre vendas.'}</p></div>{isManagement && <button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button>}</header>
       {error && <div className="alert error" role="alert">{error}</div>}
       {notice && <div className="alert success">{notice}</div>}
       <div className="stats"><div className="stat-card"><span>Total de filhotes</span><strong>{puppies.length}</strong></div><div className="stat-card"><span>Disponíveis</span><strong>{puppies.filter(p=>p.status==='disponivel').length}</strong></div></div>
@@ -201,7 +278,7 @@ async function handleLogout() {
         <div className="list-summary">{filtered.length} filhote(s) encontrado(s)</div>
         {loading?<p>Carregando filhotes...</p>:visible.length===0?<p>Nenhum filhote encontrado.</p>:<div className="puppy-grid">{visible.map(p=><article className="puppy-card" key={p.id}>
           {p.image?<img src={p.image} alt={p.name||'Filhote'} loading="lazy"/>:<div className="image-placeholder">🐶</div>}
-          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong><button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button></div>
+          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong>{isManagement && <button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button>}</div>
 
           {p.status === 'disponivel' && (
             <button
@@ -216,8 +293,8 @@ async function handleLogout() {
         </article>)}</div>}
         {pages>1&&<div className="pagination"><button disabled={page<=1} onClick={()=>setPage(n=>n-1)}>Anterior</button><span>Página {page} de {pages}</span><button disabled={page>=pages} onClick={()=>setPage(n=>n+1)}>Próxima</button></div>}
       </section>
-    </main>
-    {open&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!saving)closeModal();}}><div className="modal" role="dialog" aria-modal="true" aria-label={editing?'Alterar filhote':'Cadastrar novo filhote'}>
+    </main>}
+    {isManagement && open&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!saving)closeModal();}}><div className="modal" role="dialog" aria-modal="true" aria-label={editing?'Alterar filhote':'Cadastrar novo filhote'}>
       <div className="modal-heading"><h2>{editing?'Alterar Filhote':'Cadastrar Novo Filhote'}</h2><button type="button" onClick={closeModal} disabled={saving} aria-label="Fechar">✕</button></div>
       <form onSubmit={save} className="dog-form">
         <div className="form-grid">

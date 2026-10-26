@@ -22,17 +22,17 @@ export default function Login({ onLogin }) {
 
       if (loginError) throw loginError;
 
-      const { data: admin, error: adminError } = await supabase
-        .from('admin_users')
-        .select('user_id')
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('user_id, role, active')
         .eq('user_id', data.user.id)
         .maybeSingle();
 
-      if (adminError) throw adminError;
+      if (profileError) throw profileError;
 
-      if (!admin) {
+      if (!profile?.active || !['gestao', 'vendedor'].includes(profile.role)) {
         await supabase.auth.signOut();
-        throw new Error('Usuário sem permissão administrativa.');
+        throw new Error('Usuário sem perfil ativo para acessar o sistema.');
       }
 
       onLogin(data.user);
@@ -52,8 +52,8 @@ export default function Login({ onLogin }) {
           alt="Valle Tanti Auguri"
         />
 
-        <h2>Acesso Administrativo</h2>
-        <p>Entre com as mesmas credenciais do site principal.</p>
+        <h2>Acesso ao Sistema</h2>
+        <p>Entre com suas credenciais de acesso.</p>
 
         <label>
           E-mail

@@ -784,3 +784,66 @@ button:disabled {
   outline: 3px solid #B8C8DD;
   outline-offset: 2px;
 }
+
+/* Menu lateral — Valle Tanti Auguri */
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar nav button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+
+  color: #aebdd0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  line-height: 1.4;
+
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  appearance: none;
+}
+
+.sidebar nav button:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.sidebar nav button.nav-active {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: transparent;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebar nav button.nav-active:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.sidebar nav button:focus-visible {
+  outline: 2px solid #d8c3a5;
+  outline-offset: 2px;
+}
+
+/* Itens ainda não disponíveis */
+.sidebar nav > div.nav-disabled {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 16px;
+  color: #71839b;
+  font-size: 14px;
+  cursor: default;
+}
