@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import './SaleModal.css';
+import { createAndStoreDraft, downloadStoredDraft } from './contractStorage';
 
 const emptyClient = {
   full_name: '', rg: '', cpf: '', email: '', phone: '', nationality: 'Brasileira',
@@ -64,8 +65,10 @@ function ageAt(birth, saleDate) {
 }
 const steps = ['Cliente', 'Endereço', 'Animal', 'Venda'];
 
-export default function SaleModal({ puppy, onClose, onSold }) {
+export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
   const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState(null);
+  const [contractWarning, setContractWarning] = useState('');
   const [clients, setClients] = useState([]);
   const [clientId, setClientId] = useState('');
   const [creatingClient, setCreatingClient] = useState(false);
@@ -73,6 +76,7 @@ export default function SaleModal({ puppy, onClose, onSold }) {
   const [clientSearch, setClientSearch] = useState('');
   const [matchedClient, setMatchedClient] = useState(null);
   const [checkingCpf, setCheckingCpf] = useState(false);
+  const [cpfLookupError, setCpfLookupError] = useState('');
   const [animal, setAnimal] = useState({
     name: puppy?.name || '', gender: puppy?.gender || '', breed: 'Chihuahua',
     color: puppy?.coat_color || '', father: '', mother: '',
@@ -81,6 +85,7 @@ export default function SaleModal({ puppy, onClose, onSold }) {
   const [price, setPrice] = useState(puppy?.price != null ? String(puppy.price) : '');
   const [advance, setAdvance] = useState('0');
   const [saleDate, setSaleDate] = useState(localDate);
+  const [expectedDelivery, setExpectedDelivery] = useState('');
   const [supplier, setSupplier] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('pix');
   const [installments, setInstallments] = useState('');
@@ -154,20 +159,23 @@ export default function SaleModal({ puppy, onClose, onSold }) {
     if (key === 'cpf') setMatchedClient(null);
     setClient(prev => ({ ...prev, [key]: value }));
   }
-  async function lookupCpf() {
+  useEffect(() => {
+    if (!creatingClient) return;
     const cpf = text(client.cpf).replace(/\D/g, '');
-    if (cpf.length !== 11) { setError('Informe um CPF com 11 dígitos para consultar.'); return; }
-    setCheckingCpf(true); setError('');
-    try {
-      const { data, error: e } = await supabase.rpc('find_client_by_cpf', { p_cpf: cpf });
-      if (e) throw e;
-      const found = data?.[0] || null;
-      setMatchedClient(found);
-      if (found) setClientId(found.id);
-      else setClientId('');
-    } catch (e) { setError(e.message || 'Erro ao consultar CPF.'); }
-    finally { setCheckingCpf(false); }
-  }
+    setMatchedClient(null);
+    setCpfLookupError('');
+    if (cpf.length !== 11) { setCheckingCpf(false); return; }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setCheckingCpf(true);
+      const { data, error: lookupError } = await supabase.rpc('find_client_by_cpf', { p_cpf: cpf });
+      if (cancelled) return;
+      if (lookupError) setCpfLookupError('Não foi possível verificar o CPF. Tente novamente.');
+      else setMatchedClient(data?.[0] || null);
+      setCheckingCpf(false);
+    }, 450);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [client.cpf, creatingClient]);
   function changeAnimal(key, value) { setAnimal(prev => ({ ...prev, [key]: value })); }
   function validateStep(index) {
     if (index === 0) {
@@ -180,7 +188,7 @@ export default function SaleModal({ puppy, onClose, onSold }) {
       if (animal.vaccine_count !== '' && (!Number.isInteger(Number(animal.vaccine_count)) || Number(animal.vaccine_count) < 0)) return 'Quantidade de vacinas inválida.';
     }
     if (index === 3) {
-      if (!text(saleDate)) return 'Informe a data da venda.';
+      if (mode === 'reservation' && (!expectedDelivery || expectedDelivery < localDate())) return 'Informe uma data prevista de entrega válida (hoje ou futura).';
       if (!Number.isFinite(Number(price)) || cents(price) <= 0) return 'Informe um valor total válido.';
       if (!Number.isFinite(Number(advance)) || cents(advance) < 0 || remaining < 0) return 'O adiantamento deve estar entre zero e o valor total.';
       if (paymentMethod === 'cartao' && (!Number.isInteger(Number(installments)) || Number(installments) < 1)) return 'Informe as parcelas do cartão.';
@@ -231,15 +239,16 @@ export default function SaleModal({ puppy, onClose, onSold }) {
       }
       const animalDetails = {
         ...animal,
-        days_old_at_sale: ageAt(animal.birth_date, saleDate),
+        days_old_at_sale: ageAt(animal.birth_date, mode === 'reservation' ? expectedDelivery : localDate()),
         vaccine_count: animal.vaccine_count === '' ? null : Number(animal.vaccine_count)
       };
-      const { data: saleId, error: e } = await supabase.rpc('register_puppy_sale_v2', {
+      const { data: saleId, error: e } = await supabase.rpc(mode === 'reservation' ? 'reserve_puppy_v1' : 'register_puppy_sale_v2', {
         p_puppy_id: puppy.id,
         p_client_id: selectedClientId,
         p_sale_price: cents(price) / 100,
         p_advance_amount: cents(advance) / 100,
-        p_sale_date: saleDate,
+        p_sale_date: localDate(),
+        ...(mode === 'reservation' ? {p_expected_delivery_date: expectedDelivery} : {}),
         p_payment_method: paymentMethod,
         p_installments: paymentMethod === 'cartao' ? Number(installments) : null,
         // Vendedor sempre registra em seu nome; Gestão pode atribuir a um vendedor ativo.
@@ -251,7 +260,14 @@ export default function SaleModal({ puppy, onClose, onSold }) {
         p_animal_details: animalDetails
       });
       if (e) throw e;
-      onSold?.(saleId);
+      // A operação já foi registrada. Uma falha no PDF não desfaz a venda/reserva.
+      const {data: savedSale,error: readError}=await supabase.from('sales').select('*').eq('id',saleId).single();
+      if(readError) throw new Error(`Operação registrada, mas não foi possível consultar seus dados: ${readError.message}`);
+      let contract=null;
+      try { contract=await createAndStoreDraft(savedSale,user.id); }
+      catch(contractError) { setContractWarning(`Operação registrada, porém a minuta não foi armazenada: ${contractError.message}. Avise a Gestão.`); }
+      setCompleted({saleId,contract,mode});
+      onSold?.(saleId, { keepModalOpen:true });
     } catch (e) {
       setError(e?.message || 'Não foi possível registrar a venda.');
     } finally { setLoading(false); }
@@ -267,11 +283,21 @@ export default function SaleModal({ puppy, onClose, onSold }) {
       <input type={options.type || 'text'} min={options.min} value={animal[key] ?? ''} onChange={e => changeAnimal(key, e.target.value)} />
     </label>
   );
+  if (completed) return (
+    <div className="sale-overlay"><section className="sale-dialog" role="dialog" aria-modal="true" aria-label="Operação concluída" style={{padding:28,maxWidth:550}}>
+      <h2>{completed.mode === 'reservation' ? 'Reserva realizada com sucesso!' : 'Venda realizada com sucesso!'}</h2>
+      <p>{completed.contract ? 'Sua minuta foi gerada e armazenada no Supabase.' : 'O registro foi salvo no sistema.'}</p>
+      {contractWarning && <p className="sales-error" role="alert">{contractWarning}</p>}
+      {completed.contract && <button type="button" className="primary-button" onClick={async()=>{try{await downloadStoredDraft(completed.contract,completed.saleId);}catch(e){setContractWarning(e.message);}}}>Baixar minuta PDF</button>}
+      <p>Se precisar acessar essa minuta novamente, entre no seu <strong>Histórico de Vendas</strong> ou na lista de <strong>Reservas</strong>.</p>
+      <button type="button" className="secondary-button" onClick={onClose}>Concluir e fechar</button>
+    </section></div>
+  );
   return (
     <div className="sale-overlay" onMouseDown={e => { if (e.target === e.currentTarget && !loading) onClose(); }}>
       <section className="sale-dialog" role="dialog" aria-modal="true" aria-labelledby="sale-title">
         <header className="sale-header">
-          <div><h2 id="sale-title">Vender filhote</h2><p>{puppy?.name || 'Filhote sem nome'} · Dados para o contrato</p></div>
+          <div><h2 id="sale-title">{mode === 'reservation' ? 'Reservar filhote' : 'Vender filhote'}</h2><p>{puppy?.name || 'Filhote sem nome'} · Dados para o contrato</p></div>
           <button type="button" className="sale-close" onClick={onClose} disabled={loading} aria-label="Fechar">×</button>
         </header>
         <nav className="sale-steps" aria-label="Etapas do formulário">
@@ -289,7 +315,8 @@ export default function SaleModal({ puppy, onClose, onSold }) {
               {field('Nome completo *', 'full_name', { wide: true })}
               {field('RG', 'rg')}{field('CPF', 'cpf')}
               {creatingClient && <div className="sale-wide">
-                <button type="button" onClick={lookupCpf} disabled={checkingCpf || loading}>{checkingCpf ? 'Consultando...' : 'Verificar CPF existente'}</button>
+                {checkingCpf && <p className="sale-help" role="status">Verificando CPF...</p>}
+                {cpfLookupError && <p className="sale-help" role="alert">{cpfLookupError}</p>}
                 {matchedClient && <p className="sale-help">CPF já cadastrado para {matchedClient.full_name}. O cadastro existente será reutilizado nesta venda. Os dados cadastrais anteriores não serão alterados.</p>}
               </div>}
               {field('E-mail', 'email', { type: 'email' })}{field('WhatsApp / telefone', 'phone')}
@@ -341,7 +368,7 @@ export default function SaleModal({ puppy, onClose, onSold }) {
               <label>Valor total (R$) *<input type="number" min="0.01" step="0.01" value={price} onChange={e => setPrice(e.target.value)} /></label>
               <label>Valor adiantado (R$) *<input type="number" min="0" step="0.01" value={advance} onChange={e => setAdvance(e.target.value)} /></label>
               <label>Valor na entrega (R$)<input readOnly value={remaining >= 0 ? money(remaining) : 'Adiantamento maior que o total'} /></label>
-              <label>Data da venda *<input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} /></label>
+              {mode === 'reservation' ? <label>Previsão de entrega *<input type="date" min={localDate()} value={expectedDelivery} onChange={e => setExpectedDelivery(e.target.value)} /></label> : <label>Data da venda / comissão<input type="date" readOnly value={localDate()} /></label>}
               <label className="sale-wide">Valor total por extenso<input readOnly value={amountWords(price)} /></label>
               <label className="sale-wide">Valor adiantado por extenso<input readOnly value={amountWords(advance)} /></label>
               <label className="sale-wide">Valor na entrega por extenso<input readOnly value={remaining >= 0 ? amountWords(remaining) : ''} /></label>
@@ -350,12 +377,12 @@ export default function SaleModal({ puppy, onClose, onSold }) {
               {paymentMethod === 'cartao' && <label>Parcelas *<input type="number" min="1" step="1" value={installments} onChange={e => setInstallments(e.target.value)} /></label>}
               <label className="sale-wide">Observações<textarea rows="3" value={notes} onChange={e => setNotes(e.target.value)} /></label>
             </div>
-            <p className="sale-help">Ao confirmar, a venda será registrada e o filhote passará para Vendido. O PDF do contrato será implementado na próxima etapa.</p>
+            <p className="sale-help">Ao confirmar, a venda será registrada e o filhote passará para Vendido. O contrato poderá ser gerado como minuta na página Vendas, após o registro.</p>
           </>}
           {error && <p className="sale-error" role="alert">{error}</p>}
           <footer className="sale-actions">
             <button type="button" className="sale-cancel" onClick={step === 0 ? onClose : () => { setStep(s => s - 1); setError(''); }} disabled={loading}>{step === 0 ? 'Cancelar' : 'Voltar'}</button>
-            {step < 3 ? <button type="button" className="sale-submit" onClick={next} disabled={loading}>Continuar</button> : <button type="submit" className="sale-submit" disabled={loading || sellerLoading || !sellerProfile}>{loading ? 'Registrando...' : 'Confirmar venda'}</button>}
+            {step < 3 ? <button type="button" className="sale-submit" onClick={next} disabled={loading}>Continuar</button> : <button type="submit" className="sale-submit" disabled={loading || sellerLoading || !sellerProfile}>{loading ? 'Registrando...' : mode === 'reservation' ? 'Confirmar reserva' : 'Confirmar venda'}</button>}
           </footer>
         </form>
       </section>

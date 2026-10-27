@@ -18,6 +18,7 @@ const priceText = (value) => value === null || value === undefined || value === 
 
 export default function App() {
   const [puppyToSell, setPuppyToSell] = useState(null);
+  const [operationMode, setOperationMode] = useState('sale');
   const [activePage, setActivePage] = useState('puppies');
   const [authUser, setAuthUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -100,18 +101,19 @@ async function handleLogout() {
     setLoading(false);
   }
   useEffect(()=>{loadPuppies();},[]);
-  useEffect(()=>{setPage(1);},[filters,search]);
+  useEffect(()=>{setPage(1);},[filters,search,activePage]);
   useEffect(()=>()=>{cropperRef.current?.destroy();if(preview)URL.revokeObjectURL(preview);},[preview]);
 
-  const colors = useMemo(()=>[...new Set(puppies.map(p=>(p.coat_color||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[puppies]);
+  const colors = useMemo(()=>[...new Set(puppies.filter(p => activePage === 'history' ? p.status === 'vendido' : p.status !== 'vendido').map(p=>(p.coat_color||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[puppies,activePage]);
   const filtered = useMemo(()=>puppies.filter(p=>{
+    if(activePage === 'history' ? p.status !== 'vendido' : p.status === 'vendido')return false;
     if(filters.status && p.status !== filters.status)return false;
     if(filters.gender && p.gender !== filters.gender)return false;
     if(filters.coat && p.coat !== filters.coat)return false;
     if(filters.coat_color && (p.coat_color||'') !== filters.coat_color)return false;
     const q=search.trim().toLocaleLowerCase('pt-BR');
     return !q || [p.name,p.coat_color,p.status].some(v=>(v||'').toLocaleLowerCase('pt-BR').includes(q));
-  }),[puppies,filters,search]);
+  }),[puppies,filters,search,activePage]);
   const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
   const visible=filtered.slice((Math.min(page,pages)-1)*PAGE_SIZE,Math.min(page,pages)*PAGE_SIZE);
   const setField=(key,value)=>setForm(f=>({...f,[key]:value}));
@@ -247,9 +249,46 @@ async function handleLogout() {
           </svg>
           <span>Vendas</span>
         </button>
+        <button
+          type="button"
+          className={activePage === 'history' ? 'nav-active' : 'nav-disabled'}
+          onClick={() => {
+            setActivePage('history');
+            setFilters({
+              status: '',
+              gender: '',
+              coat: '',
+              coat_color: ''
+            });
+            setSearch('');
+          }}
+        >
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+            <path d="M3 12h3" />
+          </svg>
+
+          <span>Histórico de Filhotes</span>
+        </button>
         <div className="nav-disabled">Clientes (em breve)</div>
         <div className="nav-disabled">Relatórios (em breve)</div>
       </nav>
+      <div className="sidebar-footer">
+        <div className="sidebar-user" aria-label="Usuário conectado">
+          <div className="sidebar-avatar" aria-hidden="true">{(userProfile?.full_name || authUser?.email || 'U').trim().charAt(0).toUpperCase()}</div>
+          <div className="sidebar-user-details"><strong title={userProfile?.full_name || authUser?.email}>{userProfile?.full_name || authUser?.email || 'Usuário'}</strong><span>{isManagement ? 'Gestão' : 'Vendedor'}</span></div>
+        </div>
       <button
         type="button"
         className="logout-button"
@@ -257,20 +296,21 @@ async function handleLogout() {
       >
         Sair do sistema
       </button>
+      </div>
     </aside>
     {activePage === 'sales' ? (
       <main className="content">
         <SalesPage />
       </main>
     ) : <main className="content">
-      <header className="page-header"><div><h1>Filhotes</h1><p>{isManagement ? 'Gerencie os filhotes cadastrados no canil.' : 'Consulte os filhotes e registre vendas.'}</p></div>{isManagement && <button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button>}</header>
+      <header className="page-header"><div><h1>{activePage === 'history' ? 'Histórico de Filhotes' : 'Filhotes'}</h1><p>{activePage === 'history' ? 'Consulte os filhotes vendidos pelo canil.' : (isManagement ? 'Gerencie os filhotes cadastrados no canil.' : 'Consulte os filhotes e registre vendas.')}</p></div>{isManagement && activePage !== 'history' && <button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button>}</header>
       {error && <div className="alert error" role="alert">{error}</div>}
       {notice && <div className="alert success">{notice}</div>}
-      <div className="stats"><div className="stat-card"><span>Total de filhotes</span><strong>{puppies.length}</strong></div><div className="stat-card"><span>Disponíveis</span><strong>{puppies.filter(p=>p.status==='disponivel').length}</strong></div></div>
+      <div className="stats"><div className="stat-card"><span>{activePage === 'history' ? 'Total vendidos' : 'Filhotes ativos'}</span><strong>{puppies.filter(p => activePage === 'history' ? p.status === 'vendido' : p.status !== 'vendido').length}</strong></div><div className="stat-card"><span>{activePage === 'history' ? 'No resultado' : 'Disponíveis'}</span><strong>{activePage === 'history' ? filtered.length : puppies.filter(p=>p.status==='disponivel').length}</strong></div></div>
       <section className="panel">
         <input className="search-input" aria-label="Buscar filhotes" placeholder="Buscar por nome, cor ou status..." value={search} onChange={e=>setSearch(e.target.value)}/>
         <div className="filters">
-          <label>Status<select value={filters.status} onChange={e=>setFilters(f=>({...f,status:e.target.value}))}><option value="">Todos os status</option><option value="disponivel">Disponível</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></label>
+          {activePage !== 'history' && <label>Status<select value={filters.status} onChange={e=>setFilters(f=>({...f,status:e.target.value}))}><option value="">Todos os status</option><option value="disponivel">Disponível</option><option value="reservado">Reservado</option></select></label>}
           <label>Sexo<select value={filters.gender} onChange={e=>setFilters(f=>({...f,gender:e.target.value}))}><option value="">Todos os sexos</option><option value="macho">Macho</option><option value="femea">Fêmea</option></select></label>
           <label>Pelagem<select value={filters.coat} onChange={e=>setFilters(f=>({...f,coat:e.target.value}))}><option value="">Todas as pelagens</option><option value="curto">Pelo curto</option><option value="longo">Pelo longo</option></select></label>
           <label>Cor<select value={filters.coat_color} onChange={e=>setFilters(f=>({...f,coat_color:e.target.value}))}><option value="">Todas as cores</option>{colors.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
@@ -278,17 +318,15 @@ async function handleLogout() {
         <div className="list-summary">{filtered.length} filhote(s) encontrado(s)</div>
         {loading?<p>Carregando filhotes...</p>:visible.length===0?<p>Nenhum filhote encontrado.</p>:<div className="puppy-grid">{visible.map(p=><article className="puppy-card" key={p.id}>
           {p.image?<img src={p.image} alt={p.name||'Filhote'} loading="lazy"/>:<div className="image-placeholder">🐶</div>}
-          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong>{isManagement && <button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button>}</div>
+          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong>{isManagement && activePage !== 'history' && <button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button>}</div>
 
-          {p.status === 'disponivel' && (
-            <button
-              type="button"
-              className="sell-puppy-button"
-              onClick={() => setPuppyToSell(p)}
-            >
-              Vender filhote
-            </button>
+          {activePage !== 'history' && p.status === 'disponivel' && (
+            <div style={{display:'flex',gap:8,padding:10}}>
+              <button type="button" className="sell-puppy-button" onClick={() => {setOperationMode('sale');setPuppyToSell(p);}}>Vender</button>
+              <button type="button" className="sell-puppy-button" onClick={() => {setOperationMode('reservation');setPuppyToSell(p);}}>Reservar</button>
+            </div>
           )}
+          {activePage !== 'history' && p.status === 'reservado' && <p style={{padding:'0 12px'}}>Reserva ativa — confirmar entrega na página Vendas.</p>}
 
         </article>)}</div>}
         {pages>1&&<div className="pagination"><button disabled={page<=1} onClick={()=>setPage(n=>n-1)}>Anterior</button><span>Página {page} de {pages}</span><button disabled={page>=pages} onClick={()=>setPage(n=>n+1)}>Próxima</button></div>}
@@ -320,11 +358,9 @@ async function handleLogout() {
     {puppyToSell && (
       <SaleModal
         puppy={puppyToSell}
+        mode={operationMode}
         onClose={() => setPuppyToSell(null)}
-        onSold={() => {
-          setPuppyToSell(null);
-          window.location.reload();
-    }}
+        onSold={() => { loadPuppies(); }}
   />
 )}
 </div>;
