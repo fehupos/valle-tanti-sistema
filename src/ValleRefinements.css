@@ -1,0 +1,109 @@
+/* Ajustes de interface do sistema Valle Tanti Auguri — 2026-10 */
+.puppy-card .puppy-info { padding-bottom: 4px; }
+.puppy-card .edit-button {display:block;width:100%;box-sizing:border-box;margin:10px 0 0;}
+.puppy-sales-actions {display:flex;gap:6px;padding:4px 12px 12px;align-items:stretch;}
+.puppy-sales-actions .sell-puppy-button {flex:1;min-width:0;width:auto;min-height:36px;margin:0;padding:8px 6px;font-size:12px;}
+.puppy-reserved-wrap {padding:4px 12px 12px;}
+.puppy-reserved-button {width:100%;min-height:37px;padding:8px 10px;background:#efe8dd;color:#846a48;border:1px solid #d8c7af;border-radius:8px;font-weight:700;font-size:12px;font-family:inherit;line-height:normal;cursor:not-allowed;opacity:1;}
+.puppy-card-clickable {cursor:pointer;transition:box-shadow .2s ease,transform .2s ease;}
+.puppy-card-clickable:hover {box-shadow:0 8px 25px rgba(14,28,48,.15);transform:translateY(-2px);}
+.puppy-card-clickable:focus-visible {outline:3px solid #b8c8dd;outline-offset:3px;}
+.valle-history-loading {display:flex;align-items:center;gap:12px;max-width:calc(100vw - 36px);padding:20px 24px;border-radius:12px;background:#fff;box-shadow:0 15px 45px rgba(0,0,0,.2);color:#0e1c30;font-size:14px;font-weight:600;}
+.valle-history-spinner {width:20px;height:20px;flex:0 0 20px;border:3px solid #d9dfeb;border-top-color:#0e1c30;border-radius:50%;animation:valle-spin .8s linear infinite;}
+@keyframes valle-spin {to {transform:rotate(360deg);}}
+.sales-page,.sales-panel {min-width:0;max-width:100%;}
+.sales-table-scroll.valle-table-fit {width:100%;max-width:100%;overflow-x:visible;}
+.sales-table.valle-table {width:100%;table-layout:fixed;border-collapse:collapse;font-size:clamp(10px,.8vw,12px);}
+.sales-table.valle-table th,.sales-table.valle-table td {min-width:0;max-width:0;padding:9px 5px;overflow-wrap:anywhere;word-break:normal;white-space:normal;vertical-align:middle;}
+.sales-table.valle-table th {font-weight:700;}
+.sales-table.valle-table td:last-child {max-width:none;}
+.sales-table.valle-table .sales-money {white-space:normal;}
+.valle-btn {display:inline-flex;align-items:center;justify-content:center;gap:5px;font:inherit;font-size:11px;font-weight:700;border-radius:8px;border:1px solid transparent;padding:9px 10px;min-height:35px;max-width:100%;white-space:normal;text-align:center;cursor:pointer;transition:background .15s ease;}
+.valle-btn:disabled {cursor:not-allowed;opacity:.5;}
+.valle-btn-download {color:#0e1c30;background:#faf7f2;border-color:#d5c7b3;}
+.valle-btn-download:hover:not(:disabled),.valle-btn-ghost:hover {background:#ebe4d8;}
+.valle-btn-confirm {color:white;background:#0e1c30;border-color:#0e1c30;}
+.valle-btn-confirm:hover:not(:disabled) {background:#2a4063;}
+.valle-btn-ghost {background:white;color:#0e1c30;border-color:#d5c7b3;}
+.valle-success {padding:12px;border-radius:8px;background:#e5f3e9;color:#245b3a;}
+.valle-detail-overlay {position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;background:rgba(7,15,29,.65);padding:18px;}
+.valle-detail-modal {background:#fff;width:min(680px,100%);max-height:92vh;overflow:auto;border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.25);color:#0e1c30;}
+.valle-detail-header {display:flex;justify-content:space-between;align-items:flex-start;gap:15px;background:#0e1c30;color:#fff;padding:20px 24px;}
+.valle-detail-header h2 {font-size:22px;margin:5px 0 0;color:#fff;}
+.valle-detail-kicker {font-size:10px;letter-spacing:.17em;color:#dbcaaf;font-weight:800;}
+.valle-detail-close {color:#fff;background:transparent;border:1px solid #718097;border-radius:9px;font-size:24px;line-height:1;width:34px;height:34px;cursor:pointer;}
+.valle-detail-content {padding:22px 24px;}
+.valle-detail-hero {display:flex;align-items:center;gap:20px;padding:0 0 20px;border-bottom:1px solid #e8e3dc;}
+.valle-detail-hero img,.valle-detail-placeholder {width:125px;height:125px;flex:0 0 125px;object-fit:cover;border-radius:12px;background:#f2ede5;display:grid;place-items:center;font-size:38px;}
+.valle-detail-hero h3 {font-size:23px;margin:9px 0 3px;}
+.valle-detail-hero p {margin:0;color:#7c746a;}
+.valle-status-label {display:inline-block;background:#eee7dd;color:#795a38;border-radius:30px;padding:5px 10px;font-size:11px;font-weight:700;}
+.valle-detail-grid {display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin:20px 0 0;}
+.valle-detail-grid>div {background:#faf8f5;padding:11px 12px;border-radius:9px;min-width:0;overflow-wrap:anywhere;}
+.valle-detail-grid dt {font-size:11px;color:#7c746a;margin-bottom:5px;}
+.valle-detail-grid dd {font-size:13px;font-weight:700;margin:0;}
+.valle-detail-footer {padding:16px 24px 20px;border-top:1px solid #e8e3dc;}
+.valle-detail-footer p {font-size:11px;color:#7c746a;margin:0 0 12px;}
+.valle-detail-actions {display:flex;justify-content:flex-end;gap:8px;}
+@media(max-width:680px){.sales-table.valle-table{font-size:10px}.sales-table.valle-table th,.sales-table.valle-table td{padding:7px 3px}.valle-btn{padding:6px 4px;font-size:10px}.valle-detail-hero img,.valle-detail-placeholder{width:90px;height:90px;flex-basis:90px}.valle-detail-grid{gap:8px;grid-template-columns:1fr 1fr}.valle-detail-content,.valle-detail-header,.valle-detail-footer{padding:16px}}
+
+/* Fluxo de cancelamentos */
+.valle-btn-danger {background:#a33d38;color:#fff;border-color:#a33d38;}
+.valle-btn-danger:hover:not(:disabled) {background:#872d29;}
+.valle-cancel-modal {width:min(560px,100%);}
+.valle-cancel-form {display:grid;gap:14px;}
+.valle-cancel-form p {margin:0;font-size:13px;line-height:1.55;}
+.valle-cancel-form label {display:grid;gap:6px;font-weight:700;font-size:12px;}
+.valle-cancel-form input,.valle-cancel-form select,.valle-cancel-form textarea {box-sizing:border-box;max-width:100%;width:100%;font:inherit;font-weight:400;font-size:13px;border:1px solid #d5c7b3;border-radius:8px;padding:10px;background:#fff;color:#0e1c30;}
+.valle-cancel-form .valle-cancel-note {padding:10px 12px;background:#faf7f2;border-radius:8px;color:#695b4a;}
+.valle-cancel-muted {font-size:12px;color:#7c746a;}
+/* Exclusão permanente em ambiente de testes */
+.valle-delete-modal{width:min(580px,100%)}
+.valle-delete-choice{display:flex!important;flex-direction:row;gap:10px;align-items:flex-start;font-weight:500!important}
+.valle-delete-choice input{width:18px!important;height:18px;flex:0 0 18px;margin-top:2px}
+.valle-delete-button{margin-top:10px;width:100%;background:#fff7f6;color:#992d2b;border:1px solid #dba6a3;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer}
+.valle-delete-button:hover{background:#fcebea}
+
+/* Alinhamento padronizado dos comandos do cartão */
+.puppy-card .puppy-info {padding-bottom:0;}
+.puppy-card .edit-button {display:block;width:calc(100% - 24px);margin:10px 12px 0;box-sizing:border-box;min-height:36px;}
+.puppy-card .puppy-sales-actions {display:flex;gap:6px;padding:8px 12px 0;margin:0;align-items:stretch;}
+.puppy-card .puppy-sales-actions .sell-puppy-button {margin:0;flex:1;min-width:0;padding:8px 6px;min-height:36px;font-size:12px;}
+.puppy-card .puppy-reserved-wrap {padding:8px 12px 0;margin:0;}
+.puppy-card .puppy-delete-actions {padding:8px 12px 12px;margin:0;}
+.puppy-card .puppy-delete-actions .valle-delete-button {display:block;width:100%;box-sizing:border-box;margin:0;min-height:36px;font-size:12px;}
+.dog-form .form-actions .secondary-button {font-size:12px;font-family:inherit;font-weight:700;}
+
+/* Correção: todas as ações usam exatamente os mesmos 12px laterais e 8px verticais. */
+.puppy-card .puppy-info { padding-bottom: 0; }
+.puppy-card .puppy-edit-actions,
+.puppy-card .puppy-sales-actions,
+.puppy-card .puppy-reserved-wrap,
+.puppy-card .puppy-delete-actions {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 8px 12px 0;
+}
+.puppy-card .puppy-edit-actions .edit-button,
+.puppy-card .puppy-delete-actions .valle-delete-button,
+.puppy-card .puppy-reserved-wrap .puppy-reserved-button {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  font-size: 12px;
+}
+.puppy-card .puppy-sales-actions { display: flex; gap: 6px; align-items: stretch; }
+.puppy-card .puppy-sales-actions .sell-puppy-button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  font-size: 12px;
+}
+.puppy-card .puppy-delete-actions { padding-bottom: 12px; }
+
+/* Status cancelado no Histórico de Filhotes */
+.status-cancelado { background: #f5e7e7; color: #9f3333; border: 1px solid #e4b6b6; }

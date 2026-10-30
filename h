@@ -1,0 +1,21 @@
+ addada                            |  20 [32m+++[m
+ package-lock.json                 |  87 [32m++++++++++++[m
+ package.json                      |   3 [32m+[m
+ public/contrato-valle-modelo.docx | Bin [31m0[m -> [32m193768[m bytes
+ public/contrato-valle-modelo.pdf  | Bin [31m0[m -> [32m1262162[m bytes
+ src/App.jsx                       |  76 [32m+++++++++[m[31m--[m
+ src/CancelOperationModal.jsx      |  45 [32m++++++[m
+ src/ClientHistory.jsx             |  91 [32m+++++++++++++[m
+ src/ClientsPage.css               |  71 [32m++++++++++[m
+ src/ClientsPage.jsx               | 173 [32m++++++++++++++++++++++++[m
+ src/DeleteTestDataModal.jsx       |  62 [32m+++++++++[m
+ src/ReportsPage.css               |  47 [32m+++++++[m
+ src/ReportsPage.jsx               | 278 [32m++++++++++++++++++++++++++++++++++++++[m
+ src/SaleDetailModal.jsx           |  50 [32m+++++++[m
+ src/SaleModal.jsx                 |   4 [32m+[m[31m-[m
+ src/SalesPage.jsx                 |  66 [32m+++++++[m[31m--[m
+ src/ValleRefinements.css          | 109 [32m+++++++++++++++[m
+ src/contractDocx.js               | 138 [32m+++++++++++++++++++[m
+ src/contractPdf.js                | 130 [32m++++++++++++[m[31m------[m
+ src/contractStorage.js            |  91 [32m+++++++++[m[31m----[m
+ 20 files changed, 1451 insertions(+), 90 deletions(-)

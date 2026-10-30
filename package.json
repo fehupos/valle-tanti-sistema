@@ -12,7 +12,10 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
     "cropperjs": "^1.6.2",
+    "docxtemplater": "^3.71.1",
     "jspdf": "^4.2.1",
+    "pdf-lib": "^1.17.1",
+    "pizzip": "^3.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

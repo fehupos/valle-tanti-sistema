@@ -260,7 +260,7 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
         p_animal_details: animalDetails
       });
       if (e) throw e;
-      // A operação já foi registrada. Uma falha no PDF não desfaz a venda/reserva.
+      // A operação já foi registrada. Uma falha na geração do Word não desfaz a venda/reserva.
       const {data: savedSale,error: readError}=await supabase.from('sales').select('*').eq('id',saleId).single();
       if(readError) throw new Error(`Operação registrada, mas não foi possível consultar seus dados: ${readError.message}`);
       let contract=null;
@@ -288,7 +288,7 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
       <h2>{completed.mode === 'reservation' ? 'Reserva realizada com sucesso!' : 'Venda realizada com sucesso!'}</h2>
       <p>{completed.contract ? 'Sua minuta foi gerada e armazenada no Supabase.' : 'O registro foi salvo no sistema.'}</p>
       {contractWarning && <p className="sales-error" role="alert">{contractWarning}</p>}
-      {completed.contract && <button type="button" className="primary-button" onClick={async()=>{try{await downloadStoredDraft(completed.contract,completed.saleId);}catch(e){setContractWarning(e.message);}}}>Baixar minuta PDF</button>}
+      {completed.contract && <button type="button" className="primary-button" onClick={async()=>{try{await downloadStoredDraft(completed.contract,{id:completed.saleId,contract_snapshot:{client}},client);}catch(e){setContractWarning(e.message);}}}>Baixar minuta Word (.docx)</button>}
       <p>Se precisar acessar essa minuta novamente, entre no seu <strong>Histórico de Vendas</strong> ou na lista de <strong>Reservas</strong>.</p>
       <button type="button" className="secondary-button" onClick={onClose}>Concluir e fechar</button>
     </section></div>

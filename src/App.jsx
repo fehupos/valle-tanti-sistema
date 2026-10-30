@@ -6,12 +6,19 @@ import './App.css';
 import Login from './Login';
 import SaleModal from './SaleModal';
 import SalesPage from './SalesPage';
+import ClientsPage from './ClientsPage';
+import ReportsPage from './ReportsPage';
+import SaleDetailModal from './SaleDetailModal';
+import CancelOperationModal from './CancelOperationModal';
+import DeleteTestDataModal from './DeleteTestDataModal';
+import { downloadStoredDraft } from './contractStorage';
+import './ValleRefinements.css';
 
 const LOGO = 'https://lhinolmdpaonyuxbgzbw.supabase.co/storage/v1/object/public/puppy-photos/site/2.svg';
 const BUCKET = 'puppy-photos';
 const PAGE_SIZE = 8;
 const initialForm = { name:'', gender:'macho', coat:'curto', coat_color:'', price:'', status:'disponivel', pedigree:false, birth_date:'', description:'', image:'' };
-const statuses = { disponivel:'Disponível', reservado:'Reservado', vendido:'Vendido' };
+const statuses = { disponivel:'Disponível', reservado:'Reservado', vendido:'Vendido', cancelado:'Cancelado' };
 const labels = { macho:'Macho', femea:'Fêmea', curto:'Curto', longo:'Longo' };
 const pretty = (value) => labels[value] || statuses[value] || value || 'Não informado';
 const priceText = (value) => value === null || value === undefined || value === '' ? 'Preço não informado' : Number(value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -19,6 +26,10 @@ const priceText = (value) => value === null || value === undefined || value === 
 export default function App() {
   const [puppyToSell, setPuppyToSell] = useState(null);
   const [operationMode, setOperationMode] = useState('sale');
+  const [historyDetail, setHistoryDetail] = useState(null);
+  const [historyToCancel, setHistoryToCancel] = useState(null);
+  const [toDeleteTest, setToDeleteTest] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [activePage, setActivePage] = useState('puppies');
   const [authUser, setAuthUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -93,6 +104,20 @@ async function handleLogout() {
   setActivePage('puppies');
 }
 
+  async function openPuppyHistory(puppy) {
+    setHistoryLoading(true);
+    setError('');
+    try {
+      const {data:records,error:queryError}=await supabase.from('sales').select('*').eq('puppy_id',puppy.id).order('created_at',{ascending:false}).limit(1);
+      if(queryError) throw queryError;
+      const sale=records?.[0];
+      if(!sale){setError('Não foi encontrada uma venda vinculada a este filhote.');return;}
+      const {data:contracts,error:contractError}=await supabase.from('contracts').select('id,file_path,version').eq('sale_id',sale.id).order('version',{ascending:false}).limit(1);
+      if(contractError) throw contractError;
+      setHistoryDetail({sale,puppy,contract:contracts?.[0]||null});
+    }catch(e){setError(e.message||'Não foi possível abrir o histórico.');}
+    finally{setHistoryLoading(false);}
+  }
   async function loadPuppies() {
     setLoading(true);
     const {data,error:queryError} = await supabase.from('puppies').select('*').order('created_at',{ascending:false});
@@ -104,9 +129,9 @@ async function handleLogout() {
   useEffect(()=>{setPage(1);},[filters,search,activePage]);
   useEffect(()=>()=>{cropperRef.current?.destroy();if(preview)URL.revokeObjectURL(preview);},[preview]);
 
-  const colors = useMemo(()=>[...new Set(puppies.filter(p => activePage === 'history' ? p.status === 'vendido' : p.status !== 'vendido').map(p=>(p.coat_color||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[puppies,activePage]);
+  const colors = useMemo(()=>[...new Set(puppies.filter(p => activePage === 'history' ? ['vendido','cancelado'].includes(p.status) : !['vendido','cancelado'].includes(p.status)).map(p=>(p.coat_color||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[puppies,activePage]);
   const filtered = useMemo(()=>puppies.filter(p=>{
-    if(activePage === 'history' ? p.status !== 'vendido' : p.status === 'vendido')return false;
+    if(activePage === 'history' ? !['vendido','cancelado'].includes(p.status) : ['vendido','cancelado'].includes(p.status))return false;
     if(filters.status && p.status !== filters.status)return false;
     if(filters.gender && p.gender !== filters.gender)return false;
     if(filters.coat && p.coat !== filters.coat)return false;
@@ -155,6 +180,9 @@ async function handleLogout() {
       if(authError || !user)throw new Error('Entre com uma conta administrativa antes de cadastrar ou editar filhotes. Precisamos configurar o login neste sistema.');
       const payload={...form,name:form.name.trim(),coat_color:form.coat_color.trim()||null,description:form.description.trim()||null,
         birth_date:form.birth_date||null,price:form.price===''?null:Number(form.price),image:form.image||null};
+      // O status é gerenciado apenas pelos fluxos comerciais, nunca pela edição do cadastro.
+      if (editing) delete payload.status;
+      else payload.status = 'disponivel';
       if(photo){
         const blob=await croppedBlob();
         uploadedPath=`puppies/${crypto.randomUUID()}.jpg`;
@@ -281,8 +309,8 @@ async function handleLogout() {
 
           <span>Histórico de Filhotes</span>
         </button>
-        <div className="nav-disabled">Clientes (em breve)</div>
-        <div className="nav-disabled">Relatórios (em breve)</div>
+        <button type="button" className={activePage === 'clients' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('clients')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
+        {isManagement && <button type="button" className={activePage === 'reports' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('reports')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="7" width="3" height="11"/><rect x="16" y="4" width="3" height="14"/></svg><span>Relatórios</span></button>}
       </nav>
       <div className="sidebar-footer">
         <div className="sidebar-user" aria-label="Usuário conectado">
@@ -298,15 +326,19 @@ async function handleLogout() {
       </button>
       </div>
     </aside>
-    {activePage === 'sales' ? (
+    {activePage === 'clients' ? (
+      <ClientsPage userProfile={userProfile} />
+    ) : activePage === 'reports' && isManagement ? (
+      <ReportsPage userProfile={userProfile} />
+    ) : activePage === 'sales' ? (
       <main className="content">
-        <SalesPage />
+        <SalesPage userProfile={userProfile} onOperationChanged={loadPuppies} />
       </main>
     ) : <main className="content">
-      <header className="page-header"><div><h1>{activePage === 'history' ? 'Histórico de Filhotes' : 'Filhotes'}</h1><p>{activePage === 'history' ? 'Consulte os filhotes vendidos pelo canil.' : (isManagement ? 'Gerencie os filhotes cadastrados no canil.' : 'Consulte os filhotes e registre vendas.')}</p></div>{isManagement && activePage !== 'history' && <button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button>}</header>
+      <header className="page-header"><div><h1>{activePage === 'history' ? 'Histórico de Filhotes' : 'Filhotes'}</h1><p>{activePage === 'history' ? 'Consulte filhotes vendidos e filhotes vinculados a operações canceladas.' : (isManagement ? 'Gerencie os filhotes cadastrados no canil.' : 'Consulte os filhotes e registre vendas.')}</p></div>{isManagement && activePage !== 'history' && <button className="primary-button" onClick={()=>showModal()}>+ Novo filhote</button>}</header>
       {error && <div className="alert error" role="alert">{error}</div>}
       {notice && <div className="alert success">{notice}</div>}
-      <div className="stats"><div className="stat-card"><span>{activePage === 'history' ? 'Total vendidos' : 'Filhotes ativos'}</span><strong>{puppies.filter(p => activePage === 'history' ? p.status === 'vendido' : p.status !== 'vendido').length}</strong></div><div className="stat-card"><span>{activePage === 'history' ? 'No resultado' : 'Disponíveis'}</span><strong>{activePage === 'history' ? filtered.length : puppies.filter(p=>p.status==='disponivel').length}</strong></div></div>
+      <div className="stats"><div className="stat-card"><span>{activePage === 'history' ? 'Total no histórico' : 'Filhotes ativos'}</span><strong>{puppies.filter(p => activePage === 'history' ? ['vendido','cancelado'].includes(p.status) : !['vendido','cancelado'].includes(p.status)).length}</strong></div><div className="stat-card"><span>{activePage === 'history' ? 'No resultado' : 'Disponíveis'}</span><strong>{activePage === 'history' ? filtered.length : puppies.filter(p=>p.status==='disponivel').length}</strong></div></div>
       <section className="panel">
         <input className="search-input" aria-label="Buscar filhotes" placeholder="Buscar por nome, cor ou status..." value={search} onChange={e=>setSearch(e.target.value)}/>
         <div className="filters">
@@ -316,17 +348,19 @@ async function handleLogout() {
           <label>Cor<select value={filters.coat_color} onChange={e=>setFilters(f=>({...f,coat_color:e.target.value}))}><option value="">Todas as cores</option>{colors.map(c=><option key={c} value={c}>{c}</option>)}</select></label>
         </div>
         <div className="list-summary">{filtered.length} filhote(s) encontrado(s)</div>
-        {loading?<p>Carregando filhotes...</p>:visible.length===0?<p>Nenhum filhote encontrado.</p>:<div className="puppy-grid">{visible.map(p=><article className="puppy-card" key={p.id}>
+        {loading?<p>Carregando filhotes...</p>:visible.length===0?<p>Nenhum filhote encontrado.</p>:<div className="puppy-grid">{visible.map(p=><article className={`puppy-card ${activePage === 'history' ? 'puppy-card-clickable' : ''}`} key={p.id} onClick={activePage === 'history' ? () => openPuppyHistory(p) : undefined} onKeyDown={activePage === 'history' ? e => {if(e.key === 'Enter')openPuppyHistory(p);} : undefined} tabIndex={activePage === 'history' ? 0 : undefined} role={activePage === 'history' ? 'button' : undefined}>
           {p.image?<img src={p.image} alt={p.name||'Filhote'} loading="lazy"/>:<div className="image-placeholder">🐶</div>}
-          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong>{isManagement && activePage !== 'history' && <button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button>}</div>
+          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong></div>
+          {isManagement && activePage !== 'history' && <div className="puppy-edit-actions"><button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button></div>}
 
           {activePage !== 'history' && p.status === 'disponivel' && (
-            <div style={{display:'flex',gap:8,padding:10}}>
+            <div className="puppy-sales-actions">
               <button type="button" className="sell-puppy-button" onClick={() => {setOperationMode('sale');setPuppyToSell(p);}}>Vender</button>
               <button type="button" className="sell-puppy-button" onClick={() => {setOperationMode('reservation');setPuppyToSell(p);}}>Reservar</button>
             </div>
           )}
-          {activePage !== 'history' && p.status === 'reservado' && <p style={{padding:'0 12px'}}>Reserva ativa — confirmar entrega na página Vendas.</p>}
+          {activePage !== 'history' && p.status === 'reservado' && <div className="puppy-reserved-wrap"><button type="button" className="puppy-reserved-button" disabled>Reserva Ativa</button></div>}
+          {isManagement && activePage !== 'history' && <div className="puppy-delete-actions"><button type="button" className="valle-delete-button" onClick={()=>setToDeleteTest({puppy:p})}>Excluir Filhote</button></div>}
 
         </article>)}</div>}
         {pages>1&&<div className="pagination"><button disabled={page<=1} onClick={()=>setPage(n=>n-1)}>Anterior</button><span>Página {page} de {pages}</span><button disabled={page>=pages} onClick={()=>setPage(n=>n+1)}>Próxima</button></div>}
@@ -342,7 +376,7 @@ async function handleLogout() {
           <label>Preço (R$)<input type="number" min="0" step="0.01" value={form.price} onChange={e=>setField('price',e.target.value)} placeholder="Ex: 3500.00"/></label>
           <label>Cor da pelagem<input value={form.coat_color} onChange={e=>setField('coat_color',e.target.value)} placeholder="Ex: Creme, Chocolate e Tan"/></label>
           <label>Pedigree<select value={form.pedigree?'sim':'nao'} onChange={e=>setField('pedigree',e.target.value==='sim')}><option value="nao">Não</option><option value="sim">Sim</option></select></label>
-          <label>Status *<select required value={form.status} onChange={e=>setField('status',e.target.value)}><option value="disponivel">Disponível para entrega</option><option value="reservado">Reservado</option><option value="vendido">Vendido</option></select></label>
+          <label>Status *<select disabled aria-label="Status definido automaticamente" value={editing ? (editing.status || 'disponivel') : 'disponivel'}><option value="disponivel">Disponível para entrega</option>{editing?.status === 'reservado' && <option value="reservado">Reservado</option>}{editing?.status === 'vendido' && <option value="vendido">Vendido</option>}{editing?.status === 'cancelado' && <option value="cancelado">Cancelado</option>}</select></label>
           <label>Data de nascimento<input type="date" value={form.birth_date} onChange={e=>setField('birth_date',e.target.value)}/></label>
         </div>
         <label className="photo-label">Foto do filhote<input type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto}/><small>JPEG, PNG ou WebP. Máximo de 5 MB. Recorte em 4:3.</small></label>
@@ -355,6 +389,20 @@ async function handleLogout() {
 
     </div></div>}
 
+    {historyLoading && <div className="valle-detail-overlay" role="presentation"><div className="valle-history-loading" role="status" aria-live="polite"><span className="valle-history-spinner" aria-hidden="true" />Carregando detalhes da venda...</div></div>}
+    {historyDetail && <SaleDetailModal
+      sale={historyDetail.sale}
+      puppy={historyDetail.puppy}
+      contract={historyDetail.contract}
+      onClose={()=>setHistoryDetail(null)}
+      onDownload={()=>downloadStoredDraft(historyDetail.contract,historyDetail.sale.id)}
+      canCancel={isManagement && historyDetail.sale.operation_status !== 'cancelada'}
+      canDelete={isManagement}
+      onDelete={()=>{setToDeleteTest({sale:historyDetail.sale,puppy:historyDetail.puppy});setHistoryDetail(null);}}
+      onCancel={()=>{setHistoryToCancel(historyDetail.sale);setHistoryDetail(null);}}
+    />}
+    {toDeleteTest && <DeleteTestDataModal {...toDeleteTest} onClose={()=>setToDeleteTest(null)} onDeleted={async(failures)=>{setToDeleteTest(null);setNotice(failures.length?'Registros excluídos, mas há arquivos pendentes no Storage: '+failures.join('; '):'Dados de teste excluídos com sucesso.');await loadPuppies();}}/>}
+    {historyToCancel && <CancelOperationModal sale={historyToCancel} onClose={()=>setHistoryToCancel(null)} onCancelled={async()=>{setHistoryToCancel(null);setNotice('Operação cancelada. Filhote marcado como Cancelado e movido para o Histórico de Filhotes.');await loadPuppies();}}/>}
     {puppyToSell && (
       <SaleModal
         puppy={puppyToSell}

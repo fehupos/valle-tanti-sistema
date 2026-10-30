@@ -1,0 +1,47 @@
+.vr-page{--vr-navy:#142b46;--vr-line:#e2e7ef;color:#192c44}
+.vr-filters{display:flex;gap:14px;flex-wrap:wrap;align-items:end}
+.vr-filters label{min-width:145px;flex:1;display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650}
+.vr-filters select{width:100%;background:white;border:1px solid #ced6e1;border-radius:9px;padding:10px;font:inherit;color:#243650}
+.vr-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}
+.vr-kpi{padding:20px;background:white;border:1px solid var(--vr-line);border-radius:15px;display:flex;flex-direction:column;gap:9px}
+.vr-kpi span,.vr-muted,.vr-notes{font-size:12px;color:#637083}.vr-kpi strong{font-size:clamp(18px,2vw,27px);color:var(--vr-navy);word-break:break-word}
+.vr-panel{margin-bottom:18px;padding:20px}.vr-panel h2{font-size:17px;margin:0 0 16px;color:var(--vr-navy)}
+.vr-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.vr-head h2{margin:0 0 12px}
+.vr-segments{display:flex;gap:5px;flex-wrap:wrap}.vr-segments button{border:1px solid #dce2eb;background:white;color:#34445c;padding:8px 11px;border-radius:8px;font-size:12px;cursor:pointer}.vr-segments button.selected{background:var(--vr-navy);border-color:var(--vr-navy);color:white}
+.vr-month-chart{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px;height:245px;align-items:end;margin-top:16px}
+.vr-month{min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;gap:7px;justify-content:flex-end;font-size:11px;color:#5e6c7e}
+.vr-month-val{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.vr-month-rail{height:175px;width:100%;display:flex;align-items:end;justify-content:center;border-bottom:1px solid #cbd5e1}.vr-month-rail>div{width:min(30px,85%);background:var(--vr-navy);border-radius:5px 5px 0 0}
+.vr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.vr-sex{display:flex;gap:22px;align-items:center;flex-wrap:wrap}.vr-donut{width:150px;height:150px;border-radius:50%;display:grid;place-items:center;flex:none}.vr-donut>div{width:104px;height:104px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:21px;font-weight:750}.vr-donut small{font-size:11px;font-weight:400}.vr-legend{flex:1;min-width:150px}.vr-legend p{display:flex;align-items:center;gap:7px;font-size:13px;justify-content:space-between}.vr-dot{width:10px;height:10px;display:inline-block;border-radius:100%;flex:none}.vr-dot.male{background:#142b46}.vr-dot.female{background:#d4a56f}
+.vr-bars{display:flex;flex-direction:column;gap:10px}.vr-bar-row{display:grid;grid-template-columns:minmax(120px,175px) minmax(0,1fr) 95px;align-items:center;gap:12px;font-size:12px}.vr-bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vr-bar-track{background:#edf2f7;height:13px;border-radius:5px;overflow:hidden}.vr-bar-fill{background:#142b46;height:100%;border-radius:5px}.vr-bar-row strong{text-align:right;white-space:nowrap}
+.vr-heat-overflow{overflow-x:auto}.vr-heat{display:grid;grid-template-columns:55px repeat(12,minmax(45px,1fr));gap:5px;min-width:690px}.vr-heat-row{display:contents}.vr-heat-header{text-align:center;font-size:11px;color:#617086}.vr-year{font-size:12px;align-self:center}.vr-heat-cell{display:flex;justify-content:center;align-items:center;min-height:34px;border-radius:5px;font-size:11px;font-weight:650}.vr-notes{line-height:1.7;margin:18px 0 30px}
+@media(max-width:950px){.vr-grid{grid-template-columns:1fr}}@media(max-width:650px){.vr-kpis{grid-template-columns:1fr}.vr-panel{padding:14px}.vr-month-chart{gap:3px}.vr-month-val{font-size:8px}.vr-bar-row{grid-template-columns:minmax(85px,110px) minmax(0,1fr) 70px;gap:6px;font-size:10px}.vr-filters label{min-width:125px}}
+
+/* Etapa 2: comparação de anos e cruzamento de características */
+.vr-year-options{display:flex;flex-wrap:wrap;gap:8px 15px;margin:8px 0 13px}.vr-year-options label{font-size:12px;color:#40516a;display:flex;align-items:center;gap:5px;cursor:pointer}.vr-year-options input{accent-color:#142b46}
+.vr-comparison-legend{display:flex;flex-wrap:wrap;gap:15px;margin:9px 0}.vr-comparison-legend span{font-size:12px;color:#40516a;display:flex;align-items:center;gap:6px}.vr-comparison-legend i{height:9px;width:19px;border-radius:4px;display:inline-block}
+.vr-chart-scroll{width:100%;overflow-x:auto}.vr-comparison-svg{display:block;width:100%;min-width:560px;height:auto;max-height:310px}
+.vr-matrix-controls{display:flex;align-items:center;gap:8px;margin-bottom:13px}.vr-matrix-controls select{padding:7px 10px;border:1px solid #ced6e1;border-radius:8px;background:white;color:#243650}
+.vr-matrix-scroll{width:100%;overflow-x:auto}.vr-matrix{border-collapse:collapse;width:100%;font-size:12px;min-width:650px}.vr-matrix th{text-align:left;font-size:11px;color:#637083;background:#f6f8fb;padding:11px 10px;white-space:nowrap}.vr-matrix td{border-bottom:1px solid #e9edf3;padding:11px 10px;color:#34445c}.vr-matrix td:first-child{max-width:190px;overflow-wrap:anywhere}.vr-matrix td:not(:first-child){white-space:nowrap}.vr-matrix td:nth-child(2){width:23%;min-width:95px}
+.vr-split-bar{height:15px;min-width:7px;display:flex;border-radius:5px;overflow:hidden;background:#edf2f7}.vr-split-bar i{background:#142b46;display:block}.vr-split-bar b{background:#d4a56f;display:block}
+.vr-more{border:1px solid #dce2eb;background:#fff;padding:8px 12px;border-radius:8px;margin:12px 0 4px;color:#142b46;font-weight:600;cursor:pointer}
+
+/* Etapa 3: delta mensal, distribuicoes e mapa de calor alternavel */
+.vr-delta{font-size:10px;font-weight:700;white-space:nowrap;line-height:1.1}
+.vr-delta.positive{color:#178455}
+.vr-delta.negative{color:#ba3e4c}
+.vr-month-chart{height:268px}
+.vr-grid-distributions{grid-template-columns:repeat(2,minmax(0,1fr))}
+.vr-grid-distributions .vr-legend p{gap:8px}
+.vr-heat-cell{font-variant-numeric:tabular-nums}
+@media(max-width:950px){.vr-grid-distributions{grid-template-columns:1fr}}
+
+
+/* Etapa 4: todas as colunas mensais reservam a mesma linha para o delta. */
+.vr-month-chart { align-items: stretch; }
+.vr-month { justify-content:flex-end; }
+.vr-month-label { display:block; min-height:14px; line-height:14px; flex:none; }
+.vr-delta-slot { display:block; height:16px; line-height:16px; font-size:10px; font-weight:700; white-space:nowrap; flex:none; text-align:center; }
+.vr-delta-slot.positive { color:#178455; }
+.vr-delta-slot.negative { color:#ba3e4c; }
+.vr-empty-payment { margin:14px 0 0; line-height:1.5; }

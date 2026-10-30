@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import './SalesPage.css';
 import { downloadStoredDraft } from './contractStorage';
+import SaleDetailModal from './SaleDetailModal';
+import CancelOperationModal from './CancelOperationModal';
+import DeleteTestDataModal from './DeleteTestDataModal';
+import './ValleRefinements.css';
 
 const money = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const readable = s => s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : '—';
@@ -23,7 +27,7 @@ const clientData = sale => {
   return snap.client || snap.buyer || {};
 };
 
-export default function SalesPage() {
+export default function SalesPage({ userProfile, onOperationChanged }) {
   const [month, setMonth] = useState(currentMonth);
   const [sales, setSales] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
@@ -38,6 +42,11 @@ export default function SalesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [success, setSuccess] = useState('');
+  const [toCancel, setToCancel] = useState(null);
+  const [toDeleteTest,setToDeleteTest]=useState(null);
+  const [cancelledSales, setCancelledSales] = useState([]);
   const months = useMemo(recentMonths, []);
 
   useEffect(() => {
@@ -80,13 +89,16 @@ export default function SalesPage() {
         const {data:reservationsData,error:reservationError}=await supabase.from('sales').select('*').eq('operation_status','reservada').order('expected_delivery_date',{ascending:true});
         if(reservationError) throw reservationError;
         setReservations(reservationsData||[]);
-        const allRows=[...rows,...(reservationsData||[])];
+        const {data:cancelledRows,error:cancelledError}=await supabase.from('sales').select('*').eq('operation_status','cancelada').order('cancelled_at',{ascending:false}).limit(100);
+        if(cancelledError) throw cancelledError;
+        setCancelledSales(cancelledRows||[]);
+        const allRows=[...rows,...(reservationsData||[]),...(cancelledRows||[])];
         const allIds=allRows.map(s=>s.id);
         if(allIds.length){
           const {data:contractRows,error:contractError}=await supabase.from('contracts').select('sale_id,file_path,version,id').in('sale_id',allIds).order('version',{ascending:false});
           if(contractError) throw contractError;
           setContractMap(Object.fromEntries((contractRows||[]).reverse().map(c=>[c.sale_id,c])));
-          const missingPuppyIds=[...new Set((reservationsData||[]).map(s=>s.puppy_id).filter(id=>id&&!puppyIds.includes(id)))];
+          const missingPuppyIds=[...new Set([...(reservationsData||[]),...(cancelledRows||[])].map(s=>s.puppy_id).filter(id=>id&&!puppyIds.includes(id)))];
           if(missingPuppyIds.length){
             const {data:reservedPuppies,error:rpError}=await supabase.from('puppies').select('id,name,gender,coat,coat_color,image').in('id',missingPuppyIds);
             if(rpError) throw rpError;
@@ -111,20 +123,27 @@ export default function SalesPage() {
     }
     load();
     return () => { alive = false; };
-  }, [month]);
+  }, [month,reloadKey]);
 
   async function confirmDelivery(id) {
     if(!window.confirm('Confirmar a entrega? A reserva passará a venda consolidada e a comissão será contabilizada hoje.')) return;
     setBusy(true);setError('');
     const {error:e}=await supabase.rpc('confirm_puppy_delivery_v1',{p_sale_id:id});
-    if(e) setError(e.message); else window.location.reload();
+    if(e) setError(e.message); else { setSelected(null); setSuccess('Entrega confirmada com sucesso. A venda foi consolidada.'); setReloadKey(n=>n+1); }
     setBusy(false);
   }
   async function downloadContract(sale) {
     setBusy(true);setError('');
-    try {await downloadStoredDraft(contractMap[sale.id],sale.id);}
+    try {await downloadStoredDraft(contractMap[sale.id],sale,clients[sale.client_id]);}
     catch(e){setError(e.message||'Não foi possível baixar a minuta.');}
     finally{setBusy(false);}
+  }
+  const canCancel = sale => userProfile?.role === 'gestao' || (userProfile?.role === 'vendedor' && sale.operation_status === 'reservada' && sale.seller_id === userProfile.user_id);
+  async function cancelledSuccessfully() {
+    setToCancel(null);setSelected(null);
+    setSuccess('Operação cancelada. O filhote passou para o Histórico de Filhotes com status Cancelado. Reembolso registrado sem movimentação financeira.');
+    setReloadKey(n=>n+1);
+    await onOperationChanged?.();
   }
   const total = sales.reduce((sum,s) => sum + Number(s.sale_price || 0), 0);
   const filtered = sales.filter(s => {
@@ -151,7 +170,7 @@ export default function SalesPage() {
       client: b.full_name || c.full_name || s.buyer_name || '—',
       uf: b.state || c.state || '—',
       // seller_id is an auth UUID, not a human-readable seller name.
-      seller: s.seller_id ? `ID ${s.seller_id.slice(0,8)}…` : 'Não atribuído'
+      seller: sellers[s.seller_id] || (s.seller_id ? 'Vendedor' : 'Não atribuído')
     };
   };
 
@@ -170,17 +189,40 @@ export default function SalesPage() {
     <section className="sales-panel">
       <div className="sales-list-head"><div><h2>Histórico de vendas</h2><p>{filtered.length} venda(s) encontrada(s)</p></div><input aria-label="Buscar vendas" placeholder="Buscar filhote ou cliente..." value={search} onChange={e => {setSearch(e.target.value);setPage(1);}} /></div>
       {error && <p className="sales-error" role="alert">{error}</p>}
-      {loading ? <p>Carregando vendas...</p> : <div className="sales-table-scroll"><table className="sales-table"><thead><tr>{['Data','Filhote','Sexo','Cor','Pelagem','Cliente','UF','Valor','Vendedor','Minuta'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
-        {shown.map(s => { const v=cell(s); return <tr key={s.id} onClick={() => setSelected(s)} title="Clique para visualizar a venda" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')setSelected(s);}}><td>{dateBR(s.sale_date)}</td><td>{v.name}</td><td>{v.gender}</td><td>{v.color}</td><td>{v.coat}</td><td>{v.client}</td><td>{v.uf}</td><td className="sales-money">{money(s.sale_price)}</td><td>{v.seller}</td><td><button type="button" disabled={busy||!contractMap[s.id]} onClick={e=>{e.stopPropagation();downloadContract(s);}}>{contractMap[s.id]?'Baixar PDF':'Indisponível'}</button></td></tr>; })}
+      {success && <p className="valle-success" role="status">{success}</p>}
+      {loading ? <p>Carregando vendas...</p> : <div className="sales-table-scroll valle-table-fit"><table className="sales-table valle-table"><thead><tr>{['Data','Filhote','Sexo','Cor','Pelagem','Cliente','UF','Valor','Vendedor','Minuta'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
+        {shown.map(s => { const v=cell(s); return <tr key={s.id} onClick={() => setSelected(s)} title="Clique para visualizar a venda" tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')setSelected(s);}}><td>{dateBR(s.sale_date)}</td><td>{v.name}</td><td>{v.gender}</td><td>{v.color}</td><td>{v.coat}</td><td>{v.client}</td><td>{v.uf}</td><td className="sales-money">{money(s.sale_price)}</td><td>{v.seller}</td><td><button className="valle-btn valle-btn-download" type="button" disabled={busy||!contractMap[s.id]} onClick={e=>{e.stopPropagation();downloadContract(s);}}>{contractMap[s.id]?'Baixar minuta':'Indisponível'}</button></td></tr>; })}
         {!shown.length && <tr><td colSpan={10} className="sales-empty">Nenhuma venda encontrada para este mês.</td></tr>}
       </tbody></table></div>}
       {pageCount>1 && <div className="sales-pagination"><button disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</button><span>Página {page} de {pageCount}</span><button disabled={page===pageCount} onClick={()=>setPage(p=>p+1)}>Próxima</button></div>}
     </section>
     <section className="sales-panel"><h2>Reservas aguardando entrega ({reservations.length})</h2>
-      <div className="sales-table-scroll"><table className="sales-table"><thead><tr><th>Entrega prevista</th><th>Filhote</th><th>Cliente</th><th>Valor</th><th>Ações</th></tr></thead><tbody>
-      {reservations.map(r=><tr key={r.id} onClick={()=>setSelected(r)} style={{cursor:'pointer'}}><td>{dateBR(r.expected_delivery_date)}</td><td>{animalData(r).name||r.puppy_id}</td><td>{clientData(r).full_name||r.buyer_name}</td><td>{money(r.sale_price)}</td><td><button disabled={busy} onClick={()=>confirmDelivery(r.id)}>Confirmar entrega</button> <button disabled={busy||!contractMap[r.id]} onClick={e=>{e.stopPropagation();downloadContract(r);}}>{contractMap[r.id]?'Baixar PDF':'Indisponível'}</button></td></tr>)}
+      <div className="sales-table-scroll valle-table-fit"><table className="sales-table valle-table"><thead><tr><th>Entrega prevista</th><th>Filhote</th><th>Cliente</th><th>Valor</th><th>Ações</th></tr></thead><tbody>
+      {reservations.map(r=><tr key={r.id} onClick={()=>setSelected(r)} style={{cursor:'pointer'}}><td>{dateBR(r.expected_delivery_date)}</td><td>{animalData(r).name||r.puppy_id}</td><td>{clientData(r).full_name||r.buyer_name}</td><td>{money(r.sale_price)}</td><td><button type="button" className="valle-btn valle-btn-confirm" disabled={busy} onClick={e=>{e.stopPropagation();confirmDelivery(r.id);}}>Confirmar entrega</button> <button type="button" className="valle-btn valle-btn-download" disabled={busy||!contractMap[r.id]} onClick={e=>{e.stopPropagation();downloadContract(r);}}>{contractMap[r.id]?'Baixar minuta':'Indisponível'}</button></td></tr>)}
       {!reservations.length&&<tr><td colSpan={5}>Nenhuma reserva pendente.</td></tr>}</tbody></table></div>
     </section>
-    {selected && <div className="sales-detail-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null);}}><section className="sales-detail" role="dialog" aria-modal="true" aria-label="Detalhes da venda"><header><h2>Detalhes da venda</h2><button type="button" onClick={()=>setSelected(null)} aria-label="Fechar">×</button></header>{puppies[selected.puppy_id]?.image && <img src={puppies[selected.puppy_id].image} alt={`Foto do filhote ${cell(selected).name}`} style={{width:'100%',maxHeight:240,objectFit:'contain',borderRadius:12,marginBottom:14}}/>}<dl><dt>Data</dt><dd>{dateBR(selected.sale_date)}</dd><dt>Filhote</dt><dd>{cell(selected).name}</dd><dt>Cliente</dt><dd>{cell(selected).client}</dd><dt>Valor</dt><dd>{money(selected.sale_price)}</dd><dt>Adiantamento</dt><dd>{money(selected.advance_amount)}</dd><dt>Na entrega</dt><dd>{money(selected.delivery_amount ?? (Number(selected.sale_price || 0)-Number(selected.advance_amount || 0)))}</dd><dt>Fornecedor</dt><dd>{selected.supplier_name || '—'}</dd><dt>Vendedor</dt><dd>{cell(selected).seller}</dd></dl><button disabled={busy||!contractMap[selected.id]} onClick={()=>downloadContract(selected)}>{contractMap[selected.id]?'Baixar minuta armazenada':'Minuta indisponível'}</button><p className="sales-detail-note">O PDF gerado é uma minuta sujeita a revisão jurídica.</p></section></div>}
+    <section className="sales-panel"><h2>Operações canceladas</h2><p className="valle-cancel-muted">Histórico preservado. Até 100 cancelamentos recentes.</p>
+      <div className="sales-table-scroll valle-table-fit"><table className="sales-table valle-table"><thead><tr><th>Cancelamento</th><th>Filhote</th><th>Cliente</th><th>Tipo</th><th>Motivo</th><th>Reembolso</th><th>Minuta</th></tr></thead><tbody>
+        {cancelledSales.map(s=><tr key={s.id} onClick={()=>setSelected(s)} style={{cursor:'pointer'}} tabIndex={0} onKeyDown={e=>{if(e.key==='Enter')setSelected(s);}}><td>{dateBR(s.cancelled_at)}</td><td>{animalData(s).name||puppies[s.puppy_id]?.name||'—'}</td><td>{clientData(s).full_name||s.buyer_name||'—'}</td><td>Cancelada</td><td>{s.cancellation_reason||'—'}</td><td>{money(s.refund_amount)} — {s.refund_status||'—'}</td><td><button className="valle-btn valle-btn-download" type="button" disabled={busy||!contractMap[s.id]} onClick={e=>{e.stopPropagation();downloadContract(s);}}>{contractMap[s.id]?'Baixar minuta':'Indisponível'}</button></td></tr>)}
+        {!cancelledSales.length&&<tr><td colSpan={7}>Nenhuma operação cancelada.</td></tr>}
+      </tbody></table></div>
+    </section>
+    {toDeleteTest && <DeleteTestDataModal sale={toDeleteTest} puppy={puppies[toDeleteTest.puppy_id]} onClose={()=>setToDeleteTest(null)} onDeleted={async(failures)=>{setToDeleteTest(null);setSelected(null);setSuccess(failures.length?'Operação excluída do banco; arquivos pendentes no Storage: '+failures.join('; '):'Dados de teste excluídos com sucesso.');setReloadKey(k=>k+1);await onOperationChanged?.();}}/>}
+    {toCancel && <CancelOperationModal sale={toCancel} onClose={()=>setToCancel(null)} onCancelled={cancelledSuccessfully}/>}
+    {selected && <SaleDetailModal
+      sale={selected}
+      puppy={puppies[selected.puppy_id]}
+      client={clients[selected.client_id]}
+      seller={sellers[selected.seller_id]}
+      contract={contractMap[selected.id]}
+      busy={busy}
+      onClose={()=>setSelected(null)}
+      onDownload={()=>downloadContract(selected)}
+      canCancel={canCancel(selected)}
+      canDelete={userProfile?.role==='gestao'}
+      onDelete={()=>{setToDeleteTest(selected);setSelected(null);}}
+      onCancel={()=>{setToCancel(selected);setSelected(null);}}
+    />}
+
   </div>;
 }

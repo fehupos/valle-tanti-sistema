@@ -1,0 +1,71 @@
+.valle-clients-page{min-width:0;max-width:100%}
+.valle-clients-panel{min-width:0;max-width:100%}
+.valle-client-toolbar{display:flex;gap:12px;align-items:center}
+.valle-client-toolbar .search-input{flex:1;min-width:0}
+.valle-clients-hint{font-size:12px;color:#736b62;margin:10px 0 16px}
+.valle-clients-table-wrap{width:100%;max-width:100%;overflow-x:auto}
+.valle-clients-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;color:#0e1c30}
+.valle-clients-table th{font-size:11px;text-align:left;color:#625d56;background:#f6f3ed;padding:12px 8px;font-weight:700}
+.valle-clients-table td{padding:13px 8px;border-bottom:1px solid #e9e4dc;overflow-wrap:anywhere}
+.valle-clients-table th:nth-child(1){width:26%}
+.valle-clients-table th:nth-child(2){width:21%}
+.valle-clients-table th:nth-child(3){width:18%}
+.valle-clients-table th:nth-child(4){width:7%}
+.valle-clients-table th:nth-child(5){width:17%}
+.valle-clients-table th:nth-child(6){width:11%;text-align:center}
+.valle-clients-table td:last-child{text-align:center;font-weight:700}
+.valle-clients-table tbody tr[role="button"]{cursor:pointer}
+.valle-clients-table tbody tr[role="button"]:hover{background:#faf7f2}
+.valle-clients-table tbody tr:focus-visible{outline:2px solid #0e1c30;outline-offset:-2px}
+.valle-clients-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;font-size:12px;color:#625d56}
+.valle-clients-pager>div{display:flex;gap:6px}
+.valle-client-profile{display:flex;align-items:center;gap:15px;margin-bottom:18px}
+.valle-client-avatar{background:#eae3d6;color:#0e1c30;border-radius:12px;display:flex;align-items:center;justify-content:center;width:60px;height:60px;font-size:20px;font-weight:700;flex-shrink:0}
+.valle-client-profile p{margin:4px 0 0;color:#796e61;font-size:12px}
+.valle-client-kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.valle-client-kpis>div{background:#f8f5f0;padding:12px;border-radius:10px;display:grid;gap:7px}
+.valle-client-kpis small{color:#7b6f5f;font-size:11px}
+.valle-client-kpis strong{font-size:18px}
+.valle-client-form-modal{width:min(770px,100%)}
+.valle-client-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.valle-client-form-grid label{display:grid;gap:5px;font-size:12px;font-weight:700}
+.valle-client-form-grid input:not([type=checkbox]),.valle-client-form-grid textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid #d6cabb;border-radius:8px;padding:10px;background:#fff;color:#0e1c30;font:inherit;font-weight:400}
+.valle-client-form-grid .valle-client-wide{grid-column:1/-1}
+.valle-client-form-grid .valle-client-check{display:flex;align-items:flex-start;gap:8px;font-weight:500;line-height:1.5}
+.valle-client-check input{margin:3px 0 0}
+.valle-client-form-error{color:#9f3333;padding:8px 24px;font-size:12px}
+@media(max-width:700px){.valle-clients-table{font-size:10px}.valle-clients-table th,.valle-clients-table td{padding:9px 3px}.valle-client-form-grid{grid-template-columns:1fr}.valle-client-form-grid .valle-client-wide{grid-column:auto}.valle-clients-pager{flex-wrap:wrap}}
+/* Etapa 2 — perfil 360: histórico comercial e Chihuahuas */
+.valle-detail-modal:has(.valle-client-history){width:min(850px,calc(100vw - 24px));max-height:90vh;display:flex;flex-direction:column}
+.valle-detail-modal:has(.valle-client-history) .valle-detail-content{overflow-y:auto;min-height:0}
+.valle-client-history{margin-top:22px;border-top:1px solid #e8e0d7;padding-top:20px}
+.valle-client-section-title{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:12px}
+.valle-client-section-title h3{font-size:17px;color:#0e1c30;margin:0}
+.valle-client-section-title span{font-size:11px;color:#82786b}
+.valle-client-history-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.valle-client-history-kpis>div{padding:12px 10px;background:#f8f5ef;border:1px solid #eee5da;border-radius:10px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.valle-client-history-kpis small{font-size:11px;color:#7b7165}
+.valle-client-history-kpis strong{font-size:16px;color:#0e1c30;overflow-wrap:anywhere}
+.valle-client-operations{display:grid;gap:9px}
+.valle-client-operation{border:1px solid #e6ded3;border-radius:12px;overflow:hidden;background:#fff}
+.valle-client-operation-head{display:flex;align-items:center;gap:12px;padding:11px;background:transparent;border:0;text-align:left;width:100%;color:#0e1c30;cursor:pointer;font:inherit}
+.valle-client-operation-head:hover{background:#f9f7f3}
+.valle-client-operation-main{display:grid;gap:4px;flex:1;min-width:0}
+.valle-client-operation-main strong{font-size:13px;overflow-wrap:anywhere}
+.valle-client-operation-main small{font-size:11px;color:#796f61}
+.valle-client-puppy-image,.valle-client-puppy-placeholder{height:54px;width:54px;border-radius:9px;flex-shrink:0;object-fit:cover}
+.valle-client-puppy-placeholder{display:flex;align-items:center;justify-content:center;background:#eee8de;font-size:23px}
+.valle-client-status{border-radius:8px;padding:6px 8px;font-size:10px;font-weight:700;line-height:1.3;text-align:center}
+.valle-client-status-consolidada{background:#e5efe9;color:#286345}
+.valle-client-status-reservada{background:#fff3dd;color:#81551d}
+.valle-client-status-cancelada{background:#fae8e6;color:#963b37}
+.valle-client-collapse{color:#71675e;font-size:20px;line-height:1}
+.valle-client-operation-body{padding:13px 15px 15px;border-top:1px solid #eee5da;background:#fffcf8}
+.valle-client-history-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+.valle-client-history-grid div{min-width:0}
+.valle-client-history-grid dt{font-size:10px;color:#857b6e;margin-bottom:4px}
+.valle-client-history-grid dd{font-size:12px;color:#0e1c30;margin:0;overflow-wrap:anywhere}
+.valle-client-contract-row{margin-top:15px}
+.valle-client-history-muted{font-size:12px;color:#746d64}
+.valle-client-history-error{padding:9px;border-radius:8px;background:#fff1ef;color:#963b37;font-size:12px}
+@media(max-width:700px){.valle-client-history-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.valle-client-section-title{display:block}.valle-client-status{max-width:105px}.valle-client-operation-head{gap:7px}.valle-client-history-grid{grid-template-columns:1fr 1fr}}
