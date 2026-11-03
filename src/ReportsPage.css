@@ -45,3 +45,15 @@
 .vr-delta-slot.positive { color:#178455; }
 .vr-delta-slot.negative { color:#ba3e4c; }
 .vr-empty-payment { margin:14px 0 0; line-height:1.5; }
+
+/* Ajuste visual: distancia consistente entre seletores e conteudo dos graficos. */
+.vr-panel > .vr-head:has(.vr-segments) {
+  margin-bottom: 22px;
+}
+.vr-panel > .vr-head:has(.vr-segments) h2 {
+  margin-bottom: 0;
+}
+/* O comparativo de anos usa checkboxes em vez dos botoes segmentados. */
+.vr-year-options {
+  margin-bottom: 18px;
+}

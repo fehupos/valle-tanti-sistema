@@ -1,0 +1,13 @@
+.valle-import-box{grid-column:1/-1;border:1px solid #d8cbb9;border-radius:10px;margin:6px 0 14px;padding:12px;background:transparent;font-size:13px}
+.valle-import-toggle{font:600 12px inherit;font-size:12px;cursor:pointer;background:#102139;color:#fff;border:0;border-radius:7px;padding:10px 14px}
+.valle-import-content{padding-top:12px;display:grid;gap:10px}
+.valle-import-content p{font-size:12px;margin:0;color:inherit}
+.valle-import-content textarea{box-sizing:border-box;display:block;width:100%;min-height:140px;padding:10px;border:1px solid #d2c7b8;border-radius:8px;background:transparent;color:inherit;font:13px/1.5 inherit;resize:vertical}
+.valle-import-actions{display:flex;gap:8px;flex-wrap:wrap}
+.valle-import-btn,.valle-import-secondary{cursor:pointer;border-radius:7px;padding:9px 13px;font-size:12px;font-weight:600}
+.valle-import-btn{background:#102139;color:white;border:1px solid #102139}
+.valle-import-secondary{background:transparent;color:inherit;border:1px solid #aeb7bf}
+.valle-import-preview{display:grid;gap:12px;padding:12px;border:1px solid #d8cbb9;border-radius:9px}
+.valle-import-preview dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.valle-import-preview dt{font-size:11px;opacity:.7}.valle-import-preview dd{margin:2px 0 0;overflow-wrap:anywhere;font-size:12px}
+.valle-import-warning{color:#9a3d20!important}.valle-import-btn:disabled{opacity:.5;cursor:not-allowed}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import './ClientsPage.css';
 import ClientHistory from './ClientHistory';
+import ClientTextImport from './ClientTextImport';
 
 const PAGE_SIZE = 15;
 const blank = {
@@ -149,6 +150,7 @@ export default function ClientsPage({ userProfile }) {
       <div className="valle-detail-header"><div><span className="valle-detail-kicker">GESTÃO DE CLIENTES</span><h2>{editing === 'new' ? 'Novo cliente' : 'Editar cliente'}</h2></div><button type="button" className="valle-detail-close" onClick={()=>{setEditing(null);setError('');}} aria-label="Fechar">×</button></div>
       <form onSubmit={saveClient}>
         <div className="valle-detail-content valle-client-form-grid">
+          <ClientTextImport onApply={values => setForm(current => ({...current,...values}))} disabled={saving} />
           <label className="valle-client-wide">Nome completo *<input required value={form.full_name} onChange={e=>setForm(f=>({...f,full_name:e.target.value}))}/></label>
           <label>Telefone / WhatsApp<input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></label>
           <label>CPF<input inputMode="numeric" value={form.cpf} onChange={e=>setForm(f=>({...f,cpf:e.target.value}))}/></label>

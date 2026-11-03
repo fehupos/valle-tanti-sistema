@@ -91,6 +91,7 @@ function contractFields(sale){
     'RG':present(c.rg),
     'CPF':present(c.cpf),
     'EMAIL':present(c.email),
+    'TELEFONE':present(c.phone || c.telephone || c.whatsapp || c.mobile),
     'ENDEREÇO_COMPLETO':present(addr),
     'SEXO':present(a.gender),
     'RAÇA':present(a.breed||'CHIHUAHUA'),

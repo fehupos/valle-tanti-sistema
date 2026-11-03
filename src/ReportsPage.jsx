@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
+import { colorGroup } from './puppyColors';
 import './ReportsPage.css';
 
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -51,6 +52,38 @@ function groupRank(rows, key, metric) {
 
 const yearColors = ['#142b46','#bc8750','#26868b','#8a6bc0','#b34e65'];
 const cleanColor = (v) => String(v || '').trim().replace(/\s+/g,' ') || 'Não informado';
+function reportColorGroup(v){
+  const value=cleanColor(v);
+  const normalized=value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(normalized==='branca') return 'Branco';
+  if(normalized==='lilas'||normalized==='isabella') return 'Chocolate';
+  return colorGroup(value); // outros rótulos são preservados, sem agrupamentos presumidos
+}
+/**
+ * Classificações derivadas da descrição histórica. A base historical_sales possui
+ * somente coat_color; quando duas cores estão explicitamente presentes, a
+ * primeira é tratada como primária e a segunda como secundária.
+ * Nomes genéricos (ex.: Bicolor) ficam preservados, sem deduzir cores.
+ */
+const BASE_COLORS = new Set([
+  'branco','creme','fulvo','dourado','vermelho','preto',
+  'chocolate','azul','prateado','canela','lilac','lilas','isabella'
+]);
+const normalizeName = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+function reportColorLabel(row, mode = 'primary') {
+  const raw = cleanColor(row.coat_color);
+  if (raw === 'Não informado') return raw;
+  // Reserva suporte para dados em que a cor secundária vier de outra coluna.
+  const explicitSecondary = cleanColor(row.coat_color_secondary);
+  const sourceParts = raw.split(/\s+(?:e)\s+|\s*[/+]\s*/i).map(x=>x.trim()).filter(Boolean);
+  const recognizablePair = sourceParts.length === 2 && sourceParts.every(x=>BASE_COLORS.has(normalizeName(x)));
+  const primary = reportColorGroup(recognizablePair ? sourceParts[0] : raw);
+  const secondary = explicitSecondary !== 'Não informado'
+    ? reportColorGroup(explicitSecondary)
+    : recognizablePair ? reportColorGroup(sourceParts[1]) : null;
+  if (mode !== 'combination' || !secondary || secondary === primary) return primary;
+  return `${primary} + ${secondary}`;
+}
 const sexLabel = (v) => v === 'macho' ? 'Machos' : v === 'femea' ? 'Fêmeas' : v;
 
 /** Compara anos por mês usando o mesmo critério de métrica da tela principal. */
@@ -86,12 +119,12 @@ function YearComparison({ rows, years, metric }) {
 }
 
 /** Cruzamento por cor e sexo: contagem, valor registrado e ticket por grupo. */
-function SexColorMatrix({ rows }) {
+function SexColorMatrix({ rows, colorMode = 'primary' }) {
   const [showAll,setShowAll] = useState(false);
   const groups=useMemo(()=>{
     const map=new Map();
     for(const r of rows){
-      const label=cleanColor(r.coat_color);
+      const label=reportColorLabel(r,colorMode);
       if(label==='Não informado') continue;
       if(!map.has(label)) map.set(label,{label,macho:[],femea:[]});
       if(r.gender==='macho'||r.gender==='femea') map.get(label)[r.gender].push(r);
@@ -104,7 +137,7 @@ function SexColorMatrix({ rows }) {
       totalCount:g.macho.length+g.femea.length,
       totalRevenue:metricValue([...g.macho,...g.femea],'revenue')
     })).sort((a,b)=>b.totalCount-a.totalCount);
-  },[rows]);
+  },[rows,colorMode]);
   const visible=showAll?groups:groups.slice(0,12);
   const maxCount=Math.max(1,...visible.map(x=>x.totalCount));
   return <>
@@ -131,6 +164,8 @@ export default function ReportsPage({ userProfile }) {
   const [sex,setSex] = useState('all');
   const [coat,setCoat] = useState('all');
   const [metric,setMetric] = useState('count');
+  const [colorRankMode,setColorRankMode] = useState('primary');
+  const [matrixColorMode,setMatrixColorMode] = useState('primary');
 
   useEffect(()=>{
     let alive = true;
@@ -186,7 +221,8 @@ export default function ReportsPage({ userProfile }) {
       return {change, label:`${change>=0?'+':''}${change.toFixed(1).replace('.',',')}%`};
     });
   },[monthly,year,filtered]);
-  const colors=useMemo(()=>groupRank(filtered,'coat_color',metric),[filtered,metric]);
+  const colorRows=useMemo(()=>filtered.map(r=>({...r,coat_color:reportColorLabel(r,colorRankMode)})),[filtered,colorRankMode]);
+  const colors=useMemo(()=>groupRank(colorRows,'coat_color',metric),[colorRows,metric]);
   const coatParts=useMemo(()=>{
     const counts={curto:0,longo:0,other:0};
     for(const r of filtered){if(r.coat==='curto')counts.curto++;else if(r.coat==='longo')counts.longo++;else counts.other++;}
@@ -202,7 +238,7 @@ export default function ReportsPage({ userProfile }) {
       {label:'PIX',value:0},
       {label:'Parcelado',value:0},
       {label:'Link de Pagamento',value:0},
-      {label:'Dinheiro',value:0}
+      {label:'Pix + Parcelas',value:0}
     ];
     const lookup=new Map(options.map((item,index)=>[item.label,index]));
     let other=0;
@@ -213,14 +249,13 @@ export default function ReportsPage({ userProfile }) {
       const label=simplified==='pix'?'PIX':
         simplified==='parcelado'?'Parcelado':
         ['link de pagamento','link pagamento','link'].includes(simplified)?'Link de Pagamento':
-        ['dinheiro','especie','em especie'].includes(simplified)?'Dinheiro':null;
+        ['pix + parcelas','pix+parcelas','pix e parcelas','pix_parcelas','pix_parcelado','misto'].includes(simplified)?'Pix + Parcelas':null;
       if(label) options[lookup.get(label)].value++;
       else other++;
     }
     if(other) options.push({label:'Outros',value:other});
     return options;
   },[filtered]);
-  const paymentKnown=paymentParts.reduce((total,item)=>total+item.value,0);
   const [heatMetric,setHeatMetric] = useState('count');
   const sexM=filtered.filter(r=>r.gender==='macho').length;
   const sexF=filtered.filter(r=>r.gender==='femea').length;
@@ -228,7 +263,7 @@ export default function ReportsPage({ userProfile }) {
     const y=String(new Date().getFullYear()-index);
     const monthly=months.map((_,i)=>{
       const period=base.filter(r=>String(r.sale_date).slice(0,4)===y && Number(String(r.sale_date).slice(5,7))===i+1);
-      return period.length?metricValue(period,heatMetric):null;
+      return period.length && (heatMetric==='count' || period.some(numeric)) ? metricValue(period,heatMetric) : null;
     });
     const values=monthly.filter(n=>n!==null && Number.isFinite(n));
     return {year:y,monthly,low:values.length?Math.min(...values):0,high:values.length?Math.max(...values):0};
@@ -267,12 +302,28 @@ export default function ReportsPage({ userProfile }) {
         <section className="panel vr-panel"><h2>Sexo dos filhotes</h2><DistributionDonut items={[{label:'Machos',value:sexM},{label:'Fêmeas',value:sexF}]}/></section>
         <section className="panel vr-panel"><h2>Pelagem</h2><DistributionDonut items={coatParts}/></section>
         <section className="panel vr-panel"><h2>Localização dos compradores</h2><DistributionDonut items={locationParts}/></section>
-        <section className="panel vr-panel"><h2>Modalidade de compra</h2><DistributionDonut items={paymentParts}/>{!paymentKnown&&<p className="vr-muted vr-empty-payment">Sem modalidades informadas na base histórica. O gráfico está preparado para PIX, Parcelado, Link de Pagamento e Dinheiro.</p>}</section>
+        <section className="panel vr-panel"><h2>Modalidade de compra</h2><DistributionDonut items={paymentParts}/></section>
       </div>
-      <section className="panel vr-panel"><div className="vr-head"><h2>Cores mais vendidas</h2><span className="vr-muted">{metricNames[metric]} • principais 12 cores</span></div><BarRows items={colors} metric={metric} maxItems={12}/></section>
-      <section className="panel vr-panel"><div className="vr-head"><h2>Cor × sexo × ticket médio</h2><span className="vr-muted">{integer(filtered.length)} vendas filtradas</span></div><SexColorMatrix rows={filtered}/></section>
-      <section className="panel vr-panel"><div className="vr-head"><h2>Mapa de calor: vendas por mês e ano</h2><div className="vr-segments" role="group" aria-label="Métrica do mapa de calor"><button type="button" className={heatMetric==='count'?'selected':''} aria-pressed={heatMetric==='count'} onClick={()=>setHeatMetric('count')}>Quantidade</button><button type="button" className={heatMetric==='revenue'?'selected':''} aria-pressed={heatMetric==='revenue'} onClick={()=>setHeatMetric('revenue')}>Valor total</button></div></div><p className="vr-muted">Últimos cinco anos, incluindo o atual. A intensidade da cor é calculada separadamente em cada ano. Filtros de raça, sexo e pelagem se aplicam independentemente do ano selecionado acima.</p><div className="vr-heat-overflow"><div className="vr-heat"><span className="vr-year"/>{months.map(m=><span key={m} className="vr-heat-header">{m}</span>)}{yearRows.map(row=><div className="vr-heat-row" key={row.year}><strong className="vr-year">{row.year}</strong>{row.monthly.map((n,i)=><span key={i} title={`${row.year} / ${months[i]}: ${n===null?'sem registros':formatMetric(n,heatMetric)}`} className="vr-heat-cell" style={heatCellStyle(n,row)}>{n===null?'–':heatMetric==='revenue'?Number(n).toLocaleString('pt-BR',{notation:'compact',maximumFractionDigits:1}):integer(n)}</span>)}</div>)}</div></div></section>
-      <p className="vr-notes">Fonte: base histórica do sistema antigo. Excluídos registros sem sexo informado. *Ticket médio calculado somente sobre vendas com valor válido. {missing ? `${missing} registro(s) neste filtro não possuem valor válido. ` : ''}{duplicate ? `${duplicate} registro(s) com possível duplicidade ainda não revisada. ` : ''}UF não informada aparece separadamente no gráfico geográfico. Modalidades de pagamento sem valor cadastrado não são estimadas. Comparações mês a mês só aparecem quando um ano específico está selecionado e o mês anterior tem valor positivo. Os registros históricos não são misturados com vendas de teste do sistema atual.</p>
+      <section className="panel vr-panel">
+        <div className="vr-head"><h2>Cores mais vendidas</h2>
+          <div className="vr-segments" role="group" aria-label="Classificação de cores mais vendidas">
+            <button type="button" className={colorRankMode==='primary'?'selected':''} aria-pressed={colorRankMode==='primary'} onClick={()=>setColorRankMode('primary')}>Cor Primária</button>
+            <button type="button" className={colorRankMode==='combination'?'selected':''} aria-pressed={colorRankMode==='combination'} onClick={()=>setColorRankMode('combination')}>Cor Primária + Secundária</button>
+          </div>
+        </div>
+        <BarRows items={colors} metric={metric} maxItems={12}/>
+      </section>
+      <section className="panel vr-panel">
+        <div className="vr-head"><h2>Cor × sexo × ticket médio</h2>
+          <div className="vr-segments" role="group" aria-label="Classificação de cores por sexo e ticket médio">
+            <button type="button" className={matrixColorMode==='primary'?'selected':''} aria-pressed={matrixColorMode==='primary'} onClick={()=>setMatrixColorMode('primary')}>Cor Primária</button>
+            <button type="button" className={matrixColorMode==='combination'?'selected':''} aria-pressed={matrixColorMode==='combination'} onClick={()=>setMatrixColorMode('combination')}>Cor Primária + Secundária</button>
+          </div>
+        </div>
+        <SexColorMatrix rows={filtered} colorMode={matrixColorMode}/>
+      </section>
+      <section className="panel vr-panel"><div className="vr-head"><h2>Mapa de calor: vendas por mês e ano</h2><div className="vr-segments" role="group" aria-label="Métrica do mapa de calor"><button type="button" className={heatMetric==='count'?'selected':''} aria-pressed={heatMetric==='count'} onClick={()=>setHeatMetric('count')}>Quantidade</button><button type="button" className={heatMetric==='revenue'?'selected':''} aria-pressed={heatMetric==='revenue'} onClick={()=>setHeatMetric('revenue')}>Valor total</button><button type="button" className={heatMetric==='ticket'?'selected':''} aria-pressed={heatMetric==='ticket'} onClick={()=>setHeatMetric('ticket')}>Ticket médio</button></div></div><div className="vr-heat-overflow"><div className="vr-heat"><span className="vr-year"/>{months.map(m=><span key={m} className="vr-heat-header">{m}</span>)}{yearRows.map(row=><div className="vr-heat-row" key={row.year}><strong className="vr-year">{row.year}</strong>{row.monthly.map((n,i)=><span key={i} title={`${row.year} / ${months[i]}: ${n===null?'sem registros':formatMetric(n,heatMetric)}`} className="vr-heat-cell" style={heatCellStyle(n,row)}>{n===null?'–':heatMetric==='count'?integer(n):Number(n).toLocaleString('pt-BR',{notation:'compact',maximumFractionDigits:1})}</span>)}</div>)}</div></div></section>
+
     </>}
   </main>;
 }

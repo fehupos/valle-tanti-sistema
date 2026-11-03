@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
+
+.ads.local.env
+
+.env
+
+.env.*
+
+!.env.example
+
+.dev.vars

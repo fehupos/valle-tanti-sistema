@@ -1,0 +1,38 @@
+/* Sidebar de largura fixa: marca, navegação rolável, perfil e saída sem sobreposição. */
+@media (min-width: 701px) {
+  .app-shell > .sidebar {
+    display: flex; flex-direction: column; height: 100vh; height: 100dvh;
+    min-height: 0; overflow: hidden; padding: 14px 12px 12px;
+  }
+  .app-shell > .sidebar .sidebar-brand { flex: 0 0 auto; margin: 0 0 12px; }
+  .app-shell > .sidebar .sidebar-brand img { display: block; width: 100%; max-width: 205px; height: 105px; margin: 0 auto; object-fit: contain; }
+  .app-shell > .sidebar nav {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    overscroll-behavior: contain; padding: 4px 3px 12px;
+    scrollbar-width: thin; scrollbar-color: #536784 transparent;
+  }
+  .app-shell > .sidebar nav button { flex: 0 0 auto; min-height: 42px; padding: 10px 12px; font-size: 13px; gap: 10px; }
+  .app-shell > .sidebar nav button svg { flex: 0 0 19px; }
+  .app-shell > .sidebar .sidebar-footer {
+    flex: 0 0 auto; margin-top: 0; padding: 10px 3px 0;
+    border-top: 1px solid rgba(255,255,255,.14);
+    background: #0e1c30;
+  }
+  .app-shell > .sidebar .sidebar-user { min-width: 0; padding: 7px 2px 10px; border-top: 0; }
+  .app-shell > .sidebar .sidebar-user-details { flex: 1 1 auto; min-width: 0; }
+  .app-shell > .sidebar .sidebar-user-details strong { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-shell > .sidebar .sidebar-footer .logout-button { display: block; width: 100%; margin: 3px 0 0; }
+}
+.sidebar nav .sidebar-nav-group-title {
+  padding: 12px 12px 3px; margin: 6px 0 0; border-top: 1px solid rgba(255,255,255,.13);
+  color: #9eafc4; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  cursor: default;
+}
+@media (max-width: 700px) {
+  .app-shell > .sidebar { overflow: visible; height: auto; }
+  .app-shell > .sidebar nav { min-width: 0; }
+  .app-shell > .sidebar nav .sidebar-nav-group-title { display: none; }
+  .app-shell > .sidebar .sidebar-footer { margin-top: 12px; }
+  .app-shell > .sidebar .sidebar-user-details { flex: 1; min-width: 0; }
+}

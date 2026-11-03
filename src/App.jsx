@@ -8,22 +8,30 @@ import SaleModal from './SaleModal';
 import SalesPage from './SalesPage';
 import ClientsPage from './ClientsPage';
 import ReportsPage from './ReportsPage';
+import MarketingPage from './MarketingPage';
 import SaleDetailModal from './SaleDetailModal';
 import CancelOperationModal from './CancelOperationModal';
 import DeleteTestDataModal from './DeleteTestDataModal';
 import { downloadStoredDraft } from './contractStorage';
 import './ValleRefinements.css';
+import './ValleSidebarLayout.css';
+import { PUPPY_COLOR_OPTIONS } from './puppyColors';
 
 const LOGO = 'https://lhinolmdpaonyuxbgzbw.supabase.co/storage/v1/object/public/puppy-photos/site/2.svg';
 const BUCKET = 'puppy-photos';
 const PAGE_SIZE = 8;
-const initialForm = { name:'', gender:'macho', coat:'curto', coat_color:'', price:'', status:'disponivel', pedigree:false, birth_date:'', description:'', image:'' };
+const initialForm = { name:'', gender:'macho', coat:'curto', coat_color:'', coat_color_secondary:'', price:'', status:'disponivel', pedigree:false, birth_date:'', description:'', image:'' };
 const statuses = { disponivel:'Disponível', reservado:'Reservado', vendido:'Vendido', cancelado:'Cancelado' };
 const labels = { macho:'Macho', femea:'Fêmea', curto:'Curto', longo:'Longo' };
 const pretty = (value) => labels[value] || statuses[value] || value || 'Não informado';
 const priceText = (value) => value === null || value === undefined || value === '' ? 'Preço não informado' : Number(value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 export default function App() {
+  // Remover a preferência antiga para garantir retorno ao tema original.
+  useEffect(() => {
+    delete document.documentElement.dataset.valleTheme;
+    try { localStorage.removeItem('valle-theme'); } catch { /* armazenamento opcional */ }
+  }, []);
   const [puppyToSell, setPuppyToSell] = useState(null);
   const [operationMode, setOperationMode] = useState('sale');
   const [historyDetail, setHistoryDetail] = useState(null);
@@ -145,7 +153,7 @@ async function handleLogout() {
   function closeModal(){setOpen(false);setPhoto(null);setPreview('');setPhotoError('');cropperRef.current?.destroy();cropperRef.current=null;}
   function showModal(p=null){
     setEditing(p);setForm(p?{
-      name:p.name||'',gender:p.gender||'macho',coat:p.coat||'curto',coat_color:p.coat_color||'',
+      name:p.name||'',gender:p.gender||'macho',coat:p.coat||'curto',coat_color:colorGroup(p.coat_color||'') === 'Chocolate' ? 'Chocolate' : p.coat_color||'',coat_color_secondary:p.coat_color_secondary||'',
       price:p.price??'',status:p.status||'disponivel',pedigree:!!p.pedigree,
       birth_date:p.birth_date||'',description:p.description||'',image:p.image||''
     }:{...initialForm});
@@ -178,7 +186,7 @@ async function handleLogout() {
     try {
       const {data:{user},error:authError}=await supabase.auth.getUser();
       if(authError || !user)throw new Error('Entre com uma conta administrativa antes de cadastrar ou editar filhotes. Precisamos configurar o login neste sistema.');
-      const payload={...form,name:form.name.trim(),coat_color:form.coat_color.trim()||null,description:form.description.trim()||null,
+      const payload={...form,name:form.name.trim(),coat_color:colorGroup(form.coat_color.trim()) || null,coat_color_secondary:form.coat_color_secondary.trim()||null,description:form.description.trim()||null,
         birth_date:form.birth_date||null,price:form.price===''?null:Number(form.price),image:form.image||null};
       // O status é gerenciado apenas pelos fluxos comerciais, nunca pela edição do cadastro.
       if (editing) delete payload.status;
@@ -201,11 +209,7 @@ async function handleLogout() {
   }
   
   if (checkingAuth) {
-    return (
-      <div className="login-page">
-        <p>Verificando acesso ao sistema...</p>
-      </div>
-    );
+    return <div className="valle-auth-loading"><p>Verificando acesso ao sistema...</p></div>;
   }
 
   if (!authUser) {
@@ -229,7 +233,7 @@ async function handleLogout() {
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="sidebar-brand"><img src={LOGO} alt="Valle Tanti Auguri"/><p>Sistema administrativo</p></div>
-      <nav>
+      <nav aria-label="Menu principal">
       <button
   type="button"
   className={activePage === 'puppies' ? 'nav-active' : 'nav-disabled'}
@@ -310,6 +314,8 @@ async function handleLogout() {
           <span>Histórico de Filhotes</span>
         </button>
         <button type="button" className={activePage === 'clients' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('clients')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
+        {isManagement && <div className="sidebar-nav-group-title">Análise e gestão</div>}
+        {isManagement && <button type="button" className={activePage === 'marketing' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('marketing')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 18V6M3 18h18"/><path d="M6 15l5-5 4 3 5-7"/><circle cx="20" cy="6" r="1"/></svg><span>Marketing</span></button>}
         {isManagement && <button type="button" className={activePage === 'reports' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('reports')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="7" width="3" height="11"/><rect x="16" y="4" width="3" height="14"/></svg><span>Relatórios</span></button>}
       </nav>
       <div className="sidebar-footer">
@@ -328,6 +334,8 @@ async function handleLogout() {
     </aside>
     {activePage === 'clients' ? (
       <ClientsPage userProfile={userProfile} />
+    ) : activePage === 'marketing' && isManagement ? (
+      <MarketingPage />
     ) : activePage === 'reports' && isManagement ? (
       <ReportsPage userProfile={userProfile} />
     ) : activePage === 'sales' ? (
@@ -350,7 +358,7 @@ async function handleLogout() {
         <div className="list-summary">{filtered.length} filhote(s) encontrado(s)</div>
         {loading?<p>Carregando filhotes...</p>:visible.length===0?<p>Nenhum filhote encontrado.</p>:<div className="puppy-grid">{visible.map(p=><article className={`puppy-card ${activePage === 'history' ? 'puppy-card-clickable' : ''}`} key={p.id} onClick={activePage === 'history' ? () => openPuppyHistory(p) : undefined} onKeyDown={activePage === 'history' ? e => {if(e.key === 'Enter')openPuppyHistory(p);} : undefined} tabIndex={activePage === 'history' ? 0 : undefined} role={activePage === 'history' ? 'button' : undefined}>
           {p.image?<img src={p.image} alt={p.name||'Filhote'} loading="lazy"/>:<div className="image-placeholder">🐶</div>}
-          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{p.coat_color||'Cor não informada'}</p><strong>{priceText(p.price)}</strong></div>
+          <div className="puppy-info"><h3>{p.name||'Sem nome'}</h3><span className={`status status-${p.status||'unknown'}`}>{pretty(p.status)}</span><p>{pretty(p.gender)} · Pelo {pretty(p.coat).toLowerCase()}</p><p>{[p.coat_color,p.coat_color_secondary].filter(Boolean).join(' e ') || 'Cor não informada'}</p><strong>{priceText(p.price)}</strong></div>
           {isManagement && activePage !== 'history' && <div className="puppy-edit-actions"><button type="button" className="edit-button" onClick={()=>showModal(p)}>Editar filhote</button></div>}
 
           {activePage !== 'history' && p.status === 'disponivel' && (
@@ -374,12 +382,21 @@ async function handleLogout() {
           <label>Sexo *<select required value={form.gender} onChange={e=>setField('gender',e.target.value)}><option value="macho">Macho</option><option value="femea">Fêmea</option></select></label>
           <label>Tipo de pelo *<select required value={form.coat} onChange={e=>setField('coat',e.target.value)}><option value="curto">Curto</option><option value="longo">Longo</option></select></label>
           <label>Preço (R$)<input type="number" min="0" step="0.01" value={form.price} onChange={e=>setField('price',e.target.value)} placeholder="Ex: 3500.00"/></label>
-          <label>Cor da pelagem<input value={form.coat_color} onChange={e=>setField('coat_color',e.target.value)} placeholder="Ex: Creme, Chocolate e Tan"/></label>
+          <label>Cor principal *<select className="puppy-color-select" aria-label="Selecionar cor principal" required value={form.coat_color} onChange={e=>setForm(f=>({...f,coat_color:e.target.value,coat_color_secondary:f.coat_color_secondary===e.target.value?'':f.coat_color_secondary}))}>
+            <option value="">Selecione a cor</option>
+            {form.coat_color && !PUPPY_COLOR_OPTIONS.some(c=>c.value===form.coat_color) && <option value={form.coat_color}>{form.coat_color} (cadastro antigo — revise)</option>}
+            {PUPPY_COLOR_OPTIONS.map(c=><option key={c.value} value={c.value}>{c.value}</option>)}
+          </select></label>
+          <label>Cor secundária (opcional)<select className="puppy-color-select" aria-label="Selecionar cor secundária" value={form.coat_color_secondary} onChange={e=>setField('coat_color_secondary',e.target.value)}>
+            <option value="">Nenhuma</option>
+            {form.coat_color_secondary && !PUPPY_COLOR_OPTIONS.some(c=>c.value===form.coat_color_secondary) && <option value={form.coat_color_secondary}>{form.coat_color_secondary} (anterior)</option>}
+            {PUPPY_COLOR_OPTIONS.filter(c=>c.value!==form.coat_color).map(c=><option key={c.value} value={c.value}>{c.value}</option>)}
+          </select></label>
           <label>Pedigree<select value={form.pedigree?'sim':'nao'} onChange={e=>setField('pedigree',e.target.value==='sim')}><option value="nao">Não</option><option value="sim">Sim</option></select></label>
           <label>Status *<select disabled aria-label="Status definido automaticamente" value={editing ? (editing.status || 'disponivel') : 'disponivel'}><option value="disponivel">Disponível para entrega</option>{editing?.status === 'reservado' && <option value="reservado">Reservado</option>}{editing?.status === 'vendido' && <option value="vendido">Vendido</option>}{editing?.status === 'cancelado' && <option value="cancelado">Cancelado</option>}</select></label>
           <label>Data de nascimento<input type="date" value={form.birth_date} onChange={e=>setField('birth_date',e.target.value)}/></label>
         </div>
-        <label className="photo-label">Foto do filhote<input type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto}/><small>JPEG, PNG ou WebP. Máximo de 5 MB. Recorte em 4:3.</small></label>
+        <label className="photo-label">Foto do filhote<input className="puppy-photo-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto}/><small>JPEG, PNG ou WebP. Máximo de 5 MB. Recorte em 4:3.</small></label>
         {photoError&&<div className="alert error">{photoError}</div>}
         {preview&&<div className="crop-area"><div className="crop-stage"><img ref={imageRef} src={preview} onLoad={imageLoaded} alt="Ajuste o recorte da foto"/></div><div className="crop-controls"><span>Arraste a foto para posicionar e ajuste o zoom.</span><div><button type="button" onClick={()=>cropperRef.current?.zoom(-.1)}>−</button><button type="button" onClick={()=>cropperRef.current?.zoom(.1)}>+</button><button type="button" onClick={()=>{setPhoto(null);setPreview('');}}>Cancelar foto</button></div></div></div>}
         {!preview&&form.image&&<div className="current-photo"><img src={form.image} alt="Foto atual"/><span>Foto atual do filhote</span></div>}
@@ -389,7 +406,7 @@ async function handleLogout() {
 
     </div></div>}
 
-    {historyLoading && <div className="valle-detail-overlay" role="presentation"><div className="valle-history-loading" role="status" aria-live="polite"><span className="valle-history-spinner" aria-hidden="true" />Carregando detalhes da venda...</div></div>}
+    {historyLoading && <div className="valle-detail-overlay" role="presentation"><div className="valle-detail-loading-text">Carregando detalhes da venda...</div></div>}
     {historyDetail && <SaleDetailModal
       sale={historyDetail.sale}
       puppy={historyDetail.puppy}

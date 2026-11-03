@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import './SaleModal.css';
 import { createAndStoreDraft, downloadStoredDraft } from './contractStorage';
+import ClientTextImport from './ClientTextImport';
 
 const emptyClient = {
   full_name: '', rg: '', cpf: '', email: '', phone: '', nationality: 'Brasileira',
@@ -191,7 +192,7 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
       if (mode === 'reservation' && (!expectedDelivery || expectedDelivery < localDate())) return 'Informe uma data prevista de entrega válida (hoje ou futura).';
       if (!Number.isFinite(Number(price)) || cents(price) <= 0) return 'Informe um valor total válido.';
       if (!Number.isFinite(Number(advance)) || cents(advance) < 0 || remaining < 0) return 'O adiantamento deve estar entre zero e o valor total.';
-      if (paymentMethod === 'cartao' && (!Number.isInteger(Number(installments)) || Number(installments) < 1)) return 'Informe as parcelas do cartão.';
+      if (['parcelado','pix_parcelas'].includes(paymentMethod) && (!Number.isInteger(Number(installments)) || Number(installments) < 1)) return 'Informe a quantidade de parcelas.';
     }
     return '';
   }
@@ -250,7 +251,7 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
         p_sale_date: localDate(),
         ...(mode === 'reservation' ? {p_expected_delivery_date: expectedDelivery} : {}),
         p_payment_method: paymentMethod,
-        p_installments: paymentMethod === 'cartao' ? Number(installments) : null,
+        p_installments: ['parcelado','pix_parcelas'].includes(paymentMethod) ? Number(installments) : null,
         // Vendedor sempre registra em seu nome; Gestão pode atribuir a um vendedor ativo.
         p_seller_id: sellerProfile.role === 'vendedor'
           ? user.id
@@ -311,6 +312,7 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
               <label>Buscar cliente<input value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Nome, CPF ou telefone" /></label>
               <label>Cliente existente *<select value={clientId} onChange={e => selectClient(e.target.value)}><option value="">Selecione um cliente</option>{filteredClients.map(c => <option key={c.id} value={c.id}>{c.full_name}{c.cpf ? ` — ${c.cpf}` : ''}</option>)}</select></label>
             </>}
+            {creatingClient && <ClientTextImport disabled={loading} onApply={values => {setClient(current=>({...current,...values}));setMatchedClient(null);}} />}
             {(creatingClient || clientId) && <div className="sale-grid">
               {field('Nome completo *', 'full_name', { wide: true })}
               {field('RG', 'rg')}{field('CPF', 'cpf')}
@@ -373,8 +375,8 @@ export default function SaleModal({ puppy, mode = 'sale', onClose, onSold }) {
               <label className="sale-wide">Valor adiantado por extenso<input readOnly value={amountWords(advance)} /></label>
               <label className="sale-wide">Valor na entrega por extenso<input readOnly value={remaining >= 0 ? amountWords(remaining) : ''} /></label>
               <label className="sale-wide">Fornecedor<input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Nome do fornecedor" /></label>
-              <label>Forma de pagamento<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="transferencia">Transferência</option><option value="dinheiro">Dinheiro</option><option value="misto">Misto</option></select></label>
-              {paymentMethod === 'cartao' && <label>Parcelas *<input type="number" min="1" step="1" value={installments} onChange={e => setInstallments(e.target.value)} /></label>}
+              <label>Forma de pagamento<select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}><option value="pix">PIX</option><option value="parcelado">Parcelado</option><option value="link_pagamento">Link de Pagamento</option><option value="pix_parcelas">Pix + Parcelas</option></select></label>
+              {['parcelado','pix_parcelas'].includes(paymentMethod) && <label>Parcelas *<input type="number" min="1" step="1" value={installments} onChange={e => setInstallments(e.target.value)} /></label>}
               <label className="sale-wide">Observações<textarea rows="3" value={notes} onChange={e => setNotes(e.target.value)} /></label>
             </div>
             <p className="sale-help">Ao confirmar, a venda será registrada e o filhote passará para Vendido. O contrato poderá ser gerado como minuta na página Vendas, após o registro.</p>

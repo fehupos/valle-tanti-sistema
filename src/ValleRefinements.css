@@ -105,5 +105,100 @@
 }
 .puppy-card .puppy-delete-actions { padding-bottom: 12px; }
 
-/* Status cancelado no Histórico de Filhotes */
-.status-cancelado { background: #f5e7e7; color: #9f3333; border: 1px solid #e4b6b6; }
+/* 2026-10-31 | Padronização dos formulários e ações — evita estilos nativos diferentes */
+.app-shell .dog-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.app-shell .dog-form select,
+.app-shell .dog-form textarea,
+.app-shell .search-input,
+.app-shell .filters select {
+  box-sizing: border-box;
+  min-width: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #0e1c30;
+}
+.app-shell .dog-form input::placeholder,
+.app-shell .dog-form textarea::placeholder,
+.app-shell .search-input::placeholder {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  color: #77859a;
+  opacity: 1;
+}
+.app-shell .dog-form .puppy-color-select {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #d5c7b3;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #0e1c30;
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
+.app-shell .dog-form .puppy-color-select option {
+  color: #0e1c30;
+  background-color: #fff;
+  font-size: 13px;
+}
+.app-shell .dog-form .puppy-color-select:focus-visible,
+.app-shell .dog-form input:focus-visible,
+.app-shell .dog-form textarea:focus-visible,
+.app-shell .search-input:focus-visible {
+  outline: 2px solid #466788;
+  outline-offset: 2px;
+}
+.app-shell .dog-form .photo-label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 7px;
+}
+.app-shell .dog-form .puppy-photo-input {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 6px;
+  border: 1px solid #d5c7b3;
+  border-radius: 8px;
+  background: #fff;
+  color: #4a6282;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.app-shell .dog-form .puppy-photo-input::file-selector-button {
+  border: 1px solid #d5c7b3;
+  border-radius: 7px;
+  background: #faf7f2;
+  color: #0e1c30;
+  padding: 7px 12px;
+  margin-right: 12px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.app-shell .dog-form .puppy-photo-input:hover::file-selector-button {
+  background: #eee7da;
+}
+.app-shell .dog-form button,
+.app-shell .puppy-card button,
+.app-shell .page-header button,
+.app-shell .pagination button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.app-shell .dog-form .form-actions button {
+  min-height: 37px;
+  font-weight: 700;
+}
