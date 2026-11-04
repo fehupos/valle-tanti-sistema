@@ -114,3 +114,95 @@
   .marketing-page .mk-metric-buttons .mk-month { padding:8px 10px; }
   .marketing-page .mk-line-chart { min-height:140px; }
 }
+
+/* Métricas diárias: valores e variações sempre alinhados em linhas fixas. */
+.marketing-page .mk-bars-scroll { overflow-x:auto; width:100%; padding-bottom:4px; }
+.marketing-page .mk-bars { display:grid; grid-template-columns:repeat(var(--day-count,31),minmax(46px,1fr)); gap:5px; height:auto; min-width:max(100%,calc(var(--day-count,31) * 49px)); overflow:visible; padding:12px 0 0; align-items:stretch; border:0; }
+.marketing-page .mk-bar-col { width:auto; max-width:none; min-width:0; height:248px; gap:5px; justify-content:flex-end; }
+.marketing-page .mk-bar-value { height:18px; line-height:18px; width:100%; font-size:9px; white-space:nowrap; text-align:center; color:#52677f; font-weight:650; font-variant-numeric:tabular-nums; }
+.marketing-page .mk-bar-rail { width:100%; height:180px; display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid #cbd5e1; flex:none; }
+.marketing-page .mk-bar { width:min(26px,80%); min-height:0; flex:none; }
+.marketing-page .mk-day-label { display:block; flex:none; height:14px; line-height:14px; text-align:center; font-size:10px; color:#66788b; }
+.marketing-page .mk-day-delta { display:block; flex:none; height:17px; line-height:17px; font-weight:750; font-size:9px; white-space:nowrap; text-align:center; font-variant-numeric:tabular-nums; }
+.marketing-page .mk-day-delta.positive,.marketing-page .mk-svg-delta.positive { color:#178455; fill:#178455; }
+.marketing-page .mk-day-delta.negative,.marketing-page .mk-svg-delta.negative { color:#ba3e4c; fill:#ba3e4c; }
+.marketing-page .mk-line-scroll { width:100%; overflow-x:auto; }
+.marketing-page .mk-line-chart { max-height:none; min-height:0; height:auto; display:block; }
+.marketing-page .mk-point-value { fill:#344b69; font-family:'Plus Jakarta Sans',sans-serif; font-size:9px; font-weight:700; }
+.marketing-page .mk-svg-delta { font-family:'Plus Jakarta Sans',sans-serif; font-size:9px; font-weight:750; }
+.marketing-page .mk-sort-button { appearance:none; border:0; padding:0; background:transparent; color:inherit; cursor:pointer; display:inline-flex; gap:5px; align-items:center; font:inherit; font-weight:750; white-space:nowrap; }
+.marketing-page .mk-sort-button span { color:#516b8c; }
+.marketing-page .mk-sort-button:hover { color:#1865a4; }
+.marketing-page .mk-sort-button:focus-visible { outline:2px solid #456c9b; outline-offset:3px; border-radius:2px; }
+
+/* Gráficos responsivos de 28 a 31 dias: ocupam 100% da largura do painel. */
+.marketing-page .mk-bars-scroll,
+.marketing-page .mk-line-scroll {
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:hidden;
+}
+.marketing-page .mk-bars {
+  width:100%;
+  min-width:0;
+  grid-template-columns:repeat(var(--day-count,31),minmax(0,1fr));
+  gap:2px;
+}
+.marketing-page .mk-bar-col { min-width:0; gap:4px; }
+.marketing-page .mk-bar-value {
+  font-size:clamp(6px,.66vw,10px);
+  font-weight:750;
+  letter-spacing:-.3px;
+  overflow:visible;
+}
+.marketing-page .mk-bar-rail { height:180px; }
+.marketing-page .mk-bar { width:min(100%,22px); }
+.marketing-page .mk-day-label { font-size:clamp(7px,.62vw,10px); }
+.marketing-page .mk-day-delta {
+  font-size:clamp(6px,.54vw,9px);
+  letter-spacing:-.35px;
+  overflow:visible;
+}
+.marketing-page .mk-line-chart {
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  height:auto;
+  min-height:0;
+}
+@media (max-width:700px) {
+  .marketing-page .mk-bars { gap:1px; }
+  .marketing-page .mk-bar-value { font-size:6px; letter-spacing:-.5px; }
+  .marketing-page .mk-day-delta { font-size:5.5px; letter-spacing:-.5px; }
+  .marketing-page .mk-day-label { font-size:7px; }
+  .marketing-page .mk-bar-rail { height:135px; }
+  .marketing-page .mk-bar-col { height:203px; }
+}
+
+/* Alternância vertical dos deltas: duas linhas reservadas por dia.
+   Evita sobreposição horizontal sem aumentar a largura do gráfico. */
+.marketing-page .mk-day-delta-stack {
+  display:flex;
+  flex:none;
+  flex-direction:column;
+  width:100%;
+  height:34px;
+  overflow:visible;
+  align-items:center;
+  justify-content:flex-start;
+}
+.marketing-page .mk-day-delta-stack .mk-day-delta {
+  display:block;
+  flex:none;
+  width:100%;
+  height:17px;
+  line-height:17px;
+  white-space:nowrap;
+  text-align:center;
+}
+.marketing-page .mk-bar-col { height:265px; }
+@media (max-width:700px) {
+  .marketing-page .mk-bar-col { height:220px; }
+}
