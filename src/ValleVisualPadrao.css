@@ -1,0 +1,154 @@
+/* Valle Tanti Auguri | padronização visual, 2026-11-04
+   Carregado por App.jsx após CSS dos módulos.
+   Não altera lógica, permissões, queries nem estrutura de dados. */
+:root {
+  --vt-blue-950: #0e1c30;
+  --vt-blue-900: #173455;
+  --vt-blue-700: #245b94;
+  --vt-blue-600: #2873b8;
+  --vt-blue-100: #eaf3fc;
+  --vt-blue-050: #f5f9ff;
+  --vt-blue-border: #b8cee5;
+  --vt-font: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+}
+/* Tipografia única para aplicação, formulários, menus e gráficos. */
+html, body, #root, .app-shell, .login-card,
+.app-shell h1, .app-shell h2, .app-shell h3, .app-shell h4,
+.app-shell p, .app-shell label, .app-shell input, .app-shell select,
+.app-shell textarea, .app-shell button, .app-shell table,
+.app-shell th, .app-shell td, .app-shell small, .app-shell strong,
+.app-shell svg text, .login-card input, .login-card button,
+.marketing-page .mk-axis-text, .marketing-page .mk-point-value,
+.marketing-page .mk-svg-delta {
+  font-family: var(--vt-font) !important;
+}
+.app-shell h1, .app-shell h2, .app-shell h3,
+.page-header h1, .login-card h1 { letter-spacing: -.025em; }
+.app-shell button { font-weight: 650; }
+/* Ações principais sempre em azul, sem alterar altura e formato existentes. */
+.app-shell .primary-button,
+.app-shell .sell-puppy-button,
+.app-shell .puppy-reserved-button,
+.app-shell .mk-refresh,
+.app-shell .mk-controls button,
+.app-shell .ct-actions .primary-button {
+  background: var(--vt-blue-900) !important;
+  border-color: var(--vt-blue-900) !important;
+  color: #fff !important;
+}
+.app-shell .primary-button:hover:not(:disabled),
+.app-shell .sell-puppy-button:hover:not(:disabled),
+.app-shell .puppy-reserved-button:hover:not(:disabled),
+.app-shell .mk-refresh:hover:not(:disabled),
+.app-shell .mk-controls button:hover:not(:disabled),
+.app-shell .ct-actions .primary-button:hover:not(:disabled) {
+  background: var(--vt-blue-700) !important;
+  border-color: var(--vt-blue-700) !important;
+}
+/* Ações secundárias usam uma única linguagem: fundo azul claro, texto azul. */
+.app-shell .secondary-button,
+.app-shell .edit-button,
+.app-shell .pagination button,
+.app-shell .crop-controls button {
+  background: var(--vt-blue-100) !important;
+  border-color: var(--vt-blue-border) !important;
+  color: var(--vt-blue-900) !important;
+}
+.app-shell .secondary-button:hover:not(:disabled),
+.app-shell .edit-button:hover:not(:disabled),
+.app-shell .pagination button:hover:not(:disabled),
+.app-shell .crop-controls button:hover:not(:disabled) {
+  background: #dbeafa !important;
+  border-color: var(--vt-blue-600) !important;
+}
+/* Controles segmentados: azul preenchido para selecionado, azul claro para inativo. */
+.marketing-page .mk-month,
+.marketing-page .mk-platform-buttons button,
+.marketing-page .mk-metric-buttons button {
+  background: var(--vt-blue-100) !important;
+  border-color: var(--vt-blue-border) !important;
+  color: var(--vt-blue-900) !important;
+}
+.marketing-page .mk-month.active,
+.marketing-page .mk-platform-buttons button.active,
+.marketing-page .mk-metric-buttons button.active,
+.marketing-page .mk-platform-buttons button[aria-pressed="true"],
+.marketing-page .mk-metric-buttons button[aria-pressed="true"] {
+  background: var(--vt-blue-900) !important;
+  border-color: var(--vt-blue-900) !important;
+  color: #fff !important;
+}
+.marketing-page .mk-month:hover:not(:disabled):not(.active) {
+  background: #dbeafa !important;
+  border-color: var(--vt-blue-600) !important;
+}
+/* Botões de ordenação e ajuda continuam discretos (sem caixas preenchidas). */
+.marketing-page .mk-sort-button { background:transparent !important; border-color:transparent !important; color:var(--vt-blue-900) !important; }
+.marketing-page .mk-help-trigger { color:var(--vt-blue-700) !important; border-color:var(--vt-blue-border) !important; }
+.marketing-page .mk-help-trigger:hover { background:var(--vt-blue-900) !important; color:#fff !important; }
+/* Paginação selecionada e botões de exclusão seguem paleta azul; o texto/ícone
+   de exclusão permanece explícito e a confirmação existente é preservada. */
+.app-shell .pagination button.active,
+.app-shell .pagination button[aria-current="page"] {
+  background:var(--vt-blue-900) !important; color:#fff !important;
+}
+.app-shell .valle-delete-button {
+  background:var(--vt-blue-050) !important;
+  border-color:var(--vt-blue-900) !important;
+  color:var(--vt-blue-900) !important;
+}
+/* Navegação mantém contraste no painel escuro; item ativo em azul. */
+.app-shell .sidebar nav button.nav-active {
+  background:var(--vt-blue-900) !important; color:#fff !important;
+}
+.app-shell .sidebar nav button:not(.nav-active):hover {
+  background:rgba(80,157,225,.18) !important;
+}
+.app-shell .logout-button:hover { background:var(--vt-blue-900) !important; color:#fff !important; }
+/* Acessibilidade: foco e desabilitados. */
+.app-shell button:focus-visible { outline:2px solid var(--vt-blue-600); outline-offset:2px; }
+.app-shell button:disabled { opacity:.55; cursor:not-allowed; }
+/* Preserva controles pequenos como fechar modal; somente cor de destaque. */
+.app-shell .modal-heading button:not(:disabled) { color:var(--vt-blue-700); }
+
+/* Identidade principal: azul-escuro, hover azul médio. */
+.app-shell .mk-refresh:hover:not(:disabled),
+.app-shell .mk-month.active:hover:not(:disabled),
+.app-shell .mk-platform-buttons button.active:hover:not(:disabled),
+.app-shell .mk-metric-buttons button.active:hover:not(:disabled),
+.app-shell .pagination button.active:hover:not(:disabled) {
+  background: var(--vt-blue-700) !important;
+  border-color: var(--vt-blue-700) !important;
+}
+/* Filtros de conta seguem a mesma lógica dos filtros de plataforma. */
+.app-shell .mk-account-buttons button,
+.app-shell .mk-account-button {
+  background: var(--vt-blue-100) !important;
+  border-color: var(--vt-blue-border) !important;
+  color: var(--vt-blue-900) !important;
+}
+.app-shell .mk-account-buttons button.active,
+.app-shell .mk-account-buttons button[aria-pressed="true"],
+.app-shell .mk-account-button.active {
+  background: var(--vt-blue-900) !important;
+  border-color: var(--vt-blue-900) !important;
+  color: #fff !important;
+}
+/* Ações destrutivas permanecem vermelhas, para não confundir exclusão com edição. */
+.app-shell .valle-delete-button,
+.app-shell .delete-button,
+.app-shell button.danger-button,
+.app-shell button.btn-danger,
+.app-shell button.button-danger {
+  background: #fff2f2 !important;
+  border-color: #c64040 !important;
+  color: #9f2424 !important;
+}
+.app-shell .valle-delete-button:hover:not(:disabled),
+.app-shell .delete-button:hover:not(:disabled),
+.app-shell button.danger-button:hover:not(:disabled),
+.app-shell button.btn-danger:hover:not(:disabled),
+.app-shell button.button-danger:hover:not(:disabled) {
+  background: #c64040 !important;
+  color: #fff !important;
+}
