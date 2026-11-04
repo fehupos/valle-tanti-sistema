@@ -1,0 +1,17 @@
+.gitignore
+public/contrato-valle-modelo.docx
+scripts/sync-ads.mjs
+src/App.jsx
+src/ClientTextImport.css
+src/ClientTextImport.jsx
+src/ClientsPage.jsx
+src/MarketingPage.css
+src/MarketingPage.jsx
+src/ReportsPage.css
+src/ReportsPage.jsx
+src/SaleModal.jsx
+src/ValleRefinements.css
+src/ValleSidebarLayout.css
+src/clientTextParser.js
+src/contractDocx.js
+src/puppyColors.js

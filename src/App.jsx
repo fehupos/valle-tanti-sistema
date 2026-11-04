@@ -9,12 +9,14 @@ import SalesPage from './SalesPage';
 import ClientsPage from './ClientsPage';
 import ReportsPage from './ReportsPage';
 import MarketingPage from './MarketingPage';
+import ContractTemplatePage from './ContractTemplatePage';
 import SaleDetailModal from './SaleDetailModal';
 import CancelOperationModal from './CancelOperationModal';
 import DeleteTestDataModal from './DeleteTestDataModal';
 import { downloadStoredDraft } from './contractStorage';
 import './ValleRefinements.css';
 import './ValleSidebarLayout.css';
+import './ValleVisualPadrao.css';
 import { PUPPY_COLOR_OPTIONS } from './puppyColors';
 
 const LOGO = 'https://lhinolmdpaonyuxbgzbw.supabase.co/storage/v1/object/public/puppy-photos/site/2.svg';
@@ -315,8 +317,9 @@ async function handleLogout() {
         </button>
         <button type="button" className={activePage === 'clients' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('clients')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
         {isManagement && <div className="sidebar-nav-group-title">Análise e gestão</div>}
-        {isManagement && <button type="button" className={activePage === 'marketing' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('marketing')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 18V6M3 18h18"/><path d="M6 15l5-5 4 3 5-7"/><circle cx="20" cy="6" r="1"/></svg><span>Marketing</span></button>}
         {isManagement && <button type="button" className={activePage === 'reports' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('reports')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="6" y="11" width="3" height="7"/><rect x="11" y="7" width="3" height="11"/><rect x="16" y="4" width="3" height="14"/></svg><span>Relatórios</span></button>}
+        {isManagement && <button type="button" className={activePage === 'marketing' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('marketing')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 18V6M3 18h18"/><path d="M6 15l5-5 4 3 5-7"/><circle cx="20" cy="6" r="1"/></svg><span>Marketing</span></button>}
+        {isManagement && <button type="button" className={activePage === 'contract-template' ? 'nav-active' : 'nav-disabled'} onClick={() => setActivePage('contract-template')}><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 3h8l3 3v18H5V3h3Z"/><path d="M8 10h8M8 14h8M8 18h5"/><path d="M16 3v4h3"/></svg><span>Modelo de Contrato</span></button>}
       </nav>
       <div className="sidebar-footer">
         <div className="sidebar-user" aria-label="Usuário conectado">
@@ -336,6 +339,8 @@ async function handleLogout() {
       <ClientsPage userProfile={userProfile} />
     ) : activePage === 'marketing' && isManagement ? (
       <MarketingPage />
+    ) : activePage === 'contract-template' && isManagement ? (
+      <ContractTemplatePage />
     ) : activePage === 'reports' && isManagement ? (
       <ReportsPage userProfile={userProfile} />
     ) : activePage === 'sales' ? (

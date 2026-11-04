@@ -1,0 +1,17 @@
+.contract-template-page{width:100%;min-width:0;box-sizing:border-box}
+.ct-section{margin-bottom:20px;padding:22px}
+.ct-section h2{margin:0 0 12px;font-size:1.15rem}
+.ct-section p{margin:8px 0 16px;line-height:1.5}
+.ct-heading{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+.ct-status,.ct-tag{border-radius:999px;padding:5px 10px;background:#e7f5ec;color:#236e42;font-size:.8rem;font-weight:700}
+.ct-tag.ct-draft{background:#f4ead3;color:#805a12}
+.ct-tag.ct-archived{background:#eceef2;color:#526071}
+.ct-field{display:flex;flex-direction:column;gap:8px;margin:16px 0;font-weight:600}
+.ct-field input{font:inherit;padding:10px;max-width:640px;box-sizing:border-box;border:1px solid #ced2d8;border-radius:8px;width:100%}
+.ct-note{font-size:.9rem;color:#666}
+.ct-history{display:flex;flex-direction:column;gap:10px}
+.ct-version{display:flex;justify-content:space-between;gap:15px;align-items:center;border:1px solid #e2e5ea;border-radius:10px;padding:13px}
+.ct-description{min-width:0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ct-description small{display:block;width:100%;color:#667}
+.ct-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:700px){.ct-version{align-items:flex-start;flex-direction:column}.ct-section{padding:15px}}

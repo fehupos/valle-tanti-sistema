@@ -1,5 +1,6 @@
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import { supabase } from './supabase';
 
 // O arquivo Word é o documento-fonte. O gerador não escreve por coordenadas.
 // Mantenha os nomes dos campos {{CAMPO}} ao editar o modelo no Word.
@@ -115,25 +116,81 @@ function contractFields(sale){
   };
 }
 
-export async function generateContractDraft(sale){
-  const base=import.meta.env.BASE_URL||'/';
-  const url=`${base.endsWith('/')?base:base+'/'}contrato-valle-modelo.docx`;
-  const response=await fetch(url,{cache:'no-store'});
-  if(!response.ok)throw new Error(`Modelo Word não encontrado (${response.status}). Verifique public/contrato-valle-modelo.docx.`);
-  const bytes=await response.arrayBuffer();
-  const zip=new PizZip(bytes); // falha se o servidor responder HTML ou um DOCX inválido
-  const doc=new Docxtemplater(zip,{
-    delimiters:{start:'{{',end:'}}'},
-    paragraphLoop:true,
-    linebreaks:true,
-    nullGetter:part=>{throw new Error(`Campo do contrato sem valor configurado: ${part.value}`);}
+// Campos reconhecidos pelo gerador. A validação impede marcadores desconhecidos.
+export const CONTRACT_TAGS = [
+  'NOME_COMPLETO','NACIONALIDADE','PROFISSÃO','ESTADO_CIVIL','RG','CPF','EMAIL',
+  'TELEFONE','ENDEREÇO_COMPLETO','SEXO','RAÇA','COR','NOME_ANIMAL','PAI','MÃE',
+  'DATA_NASCIMENTO','PEDIGREE','MICROCHIP','VALOR_TOTAL','VALOR_TOTAL_EXTENSO',
+  'VALOR_ADIANTADO','VALOR_ADIANTADO_EXTENSO','PERCENTUAL_ADIANTADO',
+  'PERCENTUAL_ADIANTADO_EXTENSO','SALDO','SALDO_EXTENSO','IDADE_DIAS','DATA_CONTRATO'
+];
+const REQUIRED_TAGS = [
+  'NOME_COMPLETO','NACIONALIDADE','PROFISSÃO','ESTADO_CIVIL','RG','CPF',
+  'EMAIL','TELEFONE','ENDEREÇO_COMPLETO','SEXO','RAÇA','COR','DATA_NASCIMENTO',
+  'VALOR_TOTAL','VALOR_TOTAL_EXTENSO','VALOR_ADIANTADO',
+  'VALOR_ADIANTADO_EXTENSO','PERCENTUAL_ADIANTADO',
+  'PERCENTUAL_ADIANTADO_EXTENSO','SALDO','SALDO_EXTENSO','IDADE_DIAS'
+];
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+function newDocument(bytes) {
+  return new Docxtemplater(new PizZip(bytes), {
+    delimiters: {start:'{{',end:'}}'},
+    paragraphLoop:true, linebreaks:true,
+    nullGetter:part => { throw new Error(`Campo desconhecido no contrato: ${part.value}`); }
   });
-  try {doc.render(contractFields(sale));}
-  catch(e){
-    const details=e?.properties?.errors?.map(item=>item.properties?.explanation).filter(Boolean).join('; ');
+}
+
+export async function validateContractTemplate(blob) {
+  if (!blob || blob.size === 0 || blob.size > 5 * 1024 * 1024) {
+    throw new Error('Selecione um arquivo DOCX válido de até 5 MB.');
+  }
+  const bytes = await blob.arrayBuffer();
+  let doc;
+  try { doc = newDocument(bytes); }
+  catch (error) { throw new Error(`DOCX inválido ou com marcadores malformados: ${error.message}`); }
+  // Texto extraído pelo próprio Docxtemplater, incluindo campos divididos em runs do Word.
+  const fullText = doc.getFullText();
+  const tags = [...fullText.matchAll(/\{\{([^{}]+)\}\}/g)].map(match => match[1].trim());
+  const unknown = [...new Set(tags.filter(tag => !CONTRACT_TAGS.includes(tag)))];
+  if (unknown.length) throw new Error(`Marcadores não reconhecidos: ${unknown.join(', ')}`);
+  const missing = REQUIRED_TAGS.filter(tag => !tags.includes(tag));
+  if (missing.length) throw new Error(`O modelo precisa manter estes campos: ${missing.join(', ')}`);
+  // Valida a renderização real, sem criar operação comercial.
+  try {
+    doc.render(Object.fromEntries(CONTRACT_TAGS.map(tag => [tag, `EXEMPLO_${tag}`])));
+  } catch (error) {
+    const detail = error?.properties?.errors?.map(e => e.properties?.explanation).filter(Boolean).join('; ');
+    throw new Error(`Não foi possível preencher a minuta: ${detail || error.message}`);
+  }
+  return { tags: [...new Set(tags)] };
+}
+
+export async function downloadPublishedContractTemplate() {
+  const {data: model, error} = await supabase.from('contract_templates')
+    .select('id,version,file_path').eq('status','published').maybeSingle();
+  if (error) throw new Error(`Não foi possível consultar o modelo vigente: ${error.message}`);
+  if (model) {
+    const {data, error:downloadError} = await supabase.storage
+      .from('contract-templates').download(model.file_path);
+    if (downloadError) throw new Error(`Não foi possível baixar o modelo vigente (v${model.version}): ${downloadError.message}`);
+    return {blob:data, version:model.version, templateId:model.id};
+  }
+  // Compatibilidade anterior à primeira publicação: arquivo original do projeto.
+  const base = import.meta.env.BASE_URL || '/';
+  const url = `${base.endsWith('/') ? base : base + '/'}contrato-valle-modelo.docx`;
+  const response = await fetch(url, {cache:'no-store'});
+  if (!response.ok) throw new Error(`Modelo original não encontrado (${response.status}).`);
+  return {blob:await response.blob(), version:0, templateId:null};
+}
+
+export async function generateContractDraft(sale) {
+  const {blob} = await downloadPublishedContractTemplate();
+  const doc = newDocument(await blob.arrayBuffer());
+  try { doc.render(contractFields(sale)); }
+  catch(e) {
+    const details = e?.properties?.errors?.map(item=>item.properties?.explanation).filter(Boolean).join('; ');
     throw new Error(`Falha ao preencher o modelo Word: ${details||e.message}`);
   }
-  return new Blob([doc.getZip().generate({type:'uint8array',compression:'DEFLATE'})],{
-    type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  });
+  return new Blob([doc.getZip().generate({type:'uint8array',compression:'DEFLATE'})],{type:DOCX_MIME});
 }
