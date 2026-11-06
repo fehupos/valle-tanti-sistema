@@ -17,7 +17,7 @@ import { downloadStoredDraft } from './contractStorage';
 import './ValleRefinements.css';
 import './ValleSidebarLayout.css';
 import './ValleVisualPadrao.css';
-import { PUPPY_COLOR_OPTIONS } from './puppyColors';
+import { PUPPY_COLOR_OPTIONS, colorGroup } from './puppyColors';
 
 const LOGO = 'https://lhinolmdpaonyuxbgzbw.supabase.co/storage/v1/object/public/puppy-photos/site/2.svg';
 const BUCKET = 'puppy-photos';
